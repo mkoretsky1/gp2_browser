@@ -12,7 +12,7 @@ from hold_data import (
     meta_ancestry_select,
 )
 
-class AppConfig:
+class CarriersConfig:
     """config settings for the application."""
     CARRIERS_BUCKET_NAME: str = 'gp2_carriers'
     GP2_DATA_BUCKET_NAME: str = 'gp2tier2'
@@ -27,12 +27,12 @@ class GenotypeMatcher:
     @staticmethod
     def is_carrier(genotype: str) -> bool:
         """check if a genotype indicates carrier status"""
-        return genotype not in [AppConfig.WILD_TYPE, AppConfig.MISSING_GENOTYPE]
+        return genotype not in [CarriersConfig.WILD_TYPE, CarriersConfig.MISSING_GENOTYPE]
 
     @staticmethod
     def is_homozygous(genotype: str) -> bool:
         """check if a genotype is homozygous"""
-        if genotype == AppConfig.MISSING_GENOTYPE:
+        if genotype == CarriersConfig.MISSING_GENOTYPE:
             return False
         alleles = genotype.split('/')
         return alleles[0] == alleles[1] and alleles[0] != "."
@@ -46,7 +46,7 @@ class CarrierDataProcessor:
 
     def _get_variants(self) -> List[str]:
         """xtract variant columns from the dataframe"""
-        return [col for col in self.df.columns if col not in AppConfig.NON_VARIANT_COLUMNS]
+        return [col for col in self.df.columns if col not in CarriersConfig.NON_VARIANT_COLUMNS]
 
     def get_carrier_status(self, row: pd.Series, selected_variants: List[str], 
                           zygosity_filter: str = 'All') -> Dict[str, str]:
@@ -101,6 +101,7 @@ class CarrierDataProcessor:
                     carriers_status.append({
                         'GP2ID': row['GP2ID'],
                         'ancestry': row['ancestry'],
+                        'cohort': row['study'],
                         **status
                     })
 
@@ -121,8 +122,8 @@ def main():
     setup_page()
     
     # iunitialize buckets
-    gp2_data_bucket = get_gcloud_bucket(AppConfig.GP2_DATA_BUCKET_NAME)
-    carriers_bucket = get_gcloud_bucket(AppConfig.CARRIERS_BUCKET_NAME)
+    gp2_data_bucket = get_gcloud_bucket(CarriersConfig.GP2_DATA_BUCKET_NAME)
+    carriers_bucket = get_gcloud_bucket(CarriersConfig.CARRIERS_BUCKET_NAME)
     
     master_key_path = get_master_key_path(
         st.session_state["release_bucket"],
@@ -131,18 +132,19 @@ def main():
     
     master_key = blob_as_csv(gp2_data_bucket, master_key_path, sep=',')
     cohort_select(master_key)
-
+    master_key = st.session_state['master_key']
     st.title("Genetic Variant Carrier Status Viewer")
 
-    # load carriers data
-    df = blob_as_csv(carriers_bucket, AppConfig.CARRIERS_FILE_PATH, sep=',')
-    snp_cols = [col for col in df.columns if col not in AppConfig.NON_VARIANT_COLUMNS]
-    filtered_df = df[df[snp_cols].apply(
+    # load carriers data. subset by samples in master key and 
+    carriers_df_in = blob_as_csv(carriers_bucket, CarriersConfig.CARRIERS_FILE_PATH, sep=',')
+    carriers_df = carriers_df_in.loc[carriers_df_in.GP2ID.isin(master_key.GP2ID)]
+    snp_cols = [col for col in carriers_df.columns if col not in CarriersConfig.NON_VARIANT_COLUMNS]
+    filtered_carriers_df = carriers_df[carriers_df[snp_cols].apply(
     lambda row: any(val not in ["WT/WT", "./."] for val in row),
     axis=1
     )]
 
-    processor = CarrierDataProcessor(filtered_df)
+    processor = CarrierDataProcessor(filtered_carriers_df)
 
     # ui controls
     meta_ancestry_select()
@@ -178,7 +180,7 @@ def main():
         st.info("Please select variants to view carrier status.")
 
     # download button
-    csv_full = df.to_csv(index=False)
+    csv_full = carriers_df_in.to_csv(index=False)
     st.download_button(
         label="Download complete dataset",
         data=csv_full,
