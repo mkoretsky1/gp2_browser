@@ -17,7 +17,7 @@ class AppConfig:
     CARRIERS_BUCKET_NAME: str = 'gp2_carriers'
     GP2_DATA_BUCKET_NAME: str = 'gp2tier2'
     CARRIERS_FILE_PATH: str = 'carriers_string_full.csv'
-    NON_VARIANT_COLUMNS: List[str] = ['GP2ID', 'ancestry']
+    NON_VARIANT_COLUMNS: List[str] = ['GP2ID', 'ancestry', 'study']
     WILD_TYPE: str = 'WT/WT'
     MISSING_GENOTYPE: str = './.'
 
@@ -136,7 +136,13 @@ def main():
 
     # load carriers data
     df = blob_as_csv(carriers_bucket, AppConfig.CARRIERS_FILE_PATH, sep=',')
-    processor = CarrierDataProcessor(df)
+    snp_cols = [col for col in df.columns if col not in AppConfig.NON_VARIANT_COLUMNS]
+    filtered_df = df[df[snp_cols].apply(
+    lambda row: any(val not in ["WT/WT", "./."] for val in row),
+    axis=1
+    )]
+
+    processor = CarrierDataProcessor(filtered_df)
 
     # ui controls
     meta_ancestry_select()
@@ -166,7 +172,6 @@ def main():
                 mime="text/csv",
                 key="download_filtered"
             )
-            
         else:
             st.info(f"No {zygosity_filter.lower()} carriers found for selected variants.")
     else:
