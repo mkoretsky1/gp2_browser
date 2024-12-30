@@ -3,3 +3,5 @@ data/*
 test.py
 __pycache__/*
 .DS_Store
+.venv
+.secrets
