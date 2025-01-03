@@ -7,7 +7,7 @@ class DataProcessor:
         """Process master key data with consistent column names"""
         
         master_key = master_key[master_key['pruned'] == 0]
-        
+        print(master_key.age_at_sample_collection)
         if release_choice in [7, 8]:
             rename_map = {
                 'age_at_sample_collection': 'Age',

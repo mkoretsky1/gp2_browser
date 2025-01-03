@@ -1,31 +1,28 @@
 import streamlit as st
-import pandas as pd
-from utils.data_loader import DataLoader
+from utils.state_manager import DataStateManager
 from utils.data_processor import DataProcessor
 from visualization.plotters import MetadataPlotter
-from hold_data import get_gcloud_bucket, config_page, cohort_select, release_select, meta_ancestry_select
+from hold_data import config_page, cohort_select, release_select, meta_ancestry_select
 
 def main():
 
     config_page('Metadata')
+    
+    previous_release = st.session_state.get('release_choice', None)
     release_select()
-
-    gp2_data_bucket = get_gcloud_bucket('gp2tier2')
-    data_loader = DataLoader(gp2_data_bucket)
-
-    master_key = data_loader.get_master_key(
-        st.session_state['release_choice'],
-        st.session_state['release_bucket']
-    )
+    
+    state_manager = DataStateManager()
+    master_key = state_manager.get_master_key()
+    
     cohort_select(master_key)
-
-    st.title(f'{st.session_state["cohort_choice"]} Metadata')
-
+    
     processor = DataProcessor()
     master_key = processor.process_master_key(
         st.session_state['master_key'],
         st.session_state['release_choice']
     )
+
+    st.title(f'{st.session_state["cohort_choice"]} Metadata')
 
     meta_ancestry_select()
     if st.session_state['meta_ancestry_choice'] != 'All':
