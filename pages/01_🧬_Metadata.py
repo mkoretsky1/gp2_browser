@@ -1,11 +1,11 @@
 import streamlit as st
-from utils.state_manager import DataStateManager
+from utils.state_manager import DataStateManager, init_session_state
 from utils.data_processor import DataProcessor
 from visualization.plotters import MetadataPlotter
 from hold_data import config_page, cohort_select, release_select, meta_ancestry_select
 
 def main():
-
+    init_session_state()
     config_page('Metadata')
     
     previous_release = st.session_state.get('release_choice', None)
@@ -26,7 +26,7 @@ def main():
 
     meta_ancestry_select()
     if st.session_state['meta_ancestry_choice'] != 'All':
-        master_key = master_key[master_key['label'] == st.session_state['meta_ancestry_choice']]
+        master_key = master_key[master_key['nba_label'] == st.session_state['meta_ancestry_choice']]
 
     plot1, plot2 = st.columns([1, 1.75])
 

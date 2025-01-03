@@ -133,8 +133,9 @@ def cohort_select(master_key):
         st.session_state['master_key'] = master_key_cohort 
 
     # check for pruned samples
-    if 1 in st.session_state.master_key['pruned'].value_counts():
-        pruned_samples = st.session_state.master_key['pruned'].value_counts()[1]
+    pruned_reasons = st.session_state.master_key.loc[~master_key['nba_prune_reason'].isna(),'nba_prune_reason'].value_counts()
+    if len(pruned_reasons>0):
+        pruned_samples = pruned_reasons[1]
     else:
         pruned_samples = 0
     
@@ -160,7 +161,7 @@ def meta_ancestry_select():
     master_key = st.session_state['master_key']
 
     # set options
-    meta_ancestry_options = ['All'] + [label for label in master_key['label'].dropna().unique()]
+    meta_ancestry_options = ['All'] + [label for label in master_key['nba_label'].dropna().unique()]
 
     # set default
     if 'meta_ancestry_choice' not in st.session_state:
@@ -189,7 +190,7 @@ def admix_ancestry_select():
     master_key = st.session_state['master_key']
 
     # set options
-    admix_ancestry_options = ['All'] + [label for label in master_key['label'].dropna().unique()]
+    admix_ancestry_options = ['All'] + [label for label in master_key['nba_label'].dropna().unique()]
 
     # set default
     if 'admix_ancestry_choice' not in st.session_state:

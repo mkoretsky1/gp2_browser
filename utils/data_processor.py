@@ -6,26 +6,32 @@ class DataProcessor:
     def process_master_key(master_key: pd.DataFrame, release_choice: int) -> pd.DataFrame:
         """Process master key data with consistent column names"""
         
-        master_key = master_key[master_key['pruned'] == 0]
-        print(master_key.age_at_sample_collection)
-        if release_choice in [7, 8]:
-            rename_map = {
+        master_key = master_key[~master_key['nba_prune_reason'].isna()]
+        # print(master_key)
+        rename_map = {
                 'age_at_sample_collection': 'Age',
                 'biological_sex_for_qc': 'Sex',
                 'baseline_GP2_phenotype_for_qc': 'Phenotype'
+                
             }
-        elif release_choice == 6:
-            rename_map = {
-                'age': 'Age',
-                'sex_for_qc': 'Sex',
-                'gp2_phenotype': 'Phenotype'
-            }
-        else:
-            rename_map = {
-                'age': 'Age',
-                'sex_for_qc': 'Sex',
-                'phenotype': 'Phenotype'
-            }
+        # if release_choice in [7, 8]:
+        #     rename_map = {
+        #         'age_at_sample_collection': 'Age',
+        #         'biological_sex_for_qc': 'Sex',
+        #         'baseline_GP2_phenotype_for_qc': 'Phenotype'
+        #     }
+        # elif release_choice == 6:
+        #     rename_map = {
+        #         'age': 'Age',
+        #         'sex_for_qc': 'Sex',
+        #         'gp2_phenotype': 'Phenotype'
+        #     }
+        # else:
+        #     rename_map = {
+        #         'age': 'Age',
+        #         'sex_for_qc': 'Sex',
+        #         'phenotype': 'Phenotype'
+        #     }
         
         master_key = master_key.rename(columns=rename_map)
         
