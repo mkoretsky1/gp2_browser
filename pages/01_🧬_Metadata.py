@@ -2,20 +2,17 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from utils.utils import (
-    debug_dataframe,
     MetadataPlotter,
     MetadataProcessor,
     get_sidebar,
     filter_master_key,
 )
-from utils.state import (
-    initialize_state,
-    load_master_key,
-)
+from utils.state import initialize_state
 
 
 class MetadataPage:
     def __init__(self):
+        st.set_page_config(layout="wide")
         initialize_state()
         get_sidebar(self)
 
@@ -30,7 +27,7 @@ class MetadataPage:
 
         plot1, plot2 = st.columns([1, 1.75])
     
-
+        master_key = master_key.loc[master_key.biological_sex_for_qc!='Other/Unknown/Not Reported']
         if master_key.shape[0] != 0:
             plot1.markdown("#### Stratify Age by:")
             stratify = plot1.radio(
