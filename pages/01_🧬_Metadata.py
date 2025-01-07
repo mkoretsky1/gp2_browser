@@ -1,52 +1,126 @@
 import streamlit as st
-from utils.state_manager import DataStateManager, init_session_state
-from utils.data_processor import DataProcessor
-from visualization.plotters import MetadataPlotter
-from hold_data import config_page, cohort_select, release_select, meta_ancestry_select
+import pandas as pd
+import plotly.express as px
+from utils.utils import (
+    debug_dataframe,
+    MetadataPlotter,
+    MetadataProcessor,
+    get_sidebar,
+    filter_master_key,
+)
+from utils.state import (
+    initialize_state,
+    load_master_key,
+)
 
-def main():
-    init_session_state()
-    config_page('Metadata')
+
+class MetadataPage:
+    def __init__(self):
+        initialize_state()
+        get_sidebar(self)
+
+        self.metadata_plotter = MetadataPlotter()
+        self.metadata_processor = MetadataProcessor()
+
+        st.title("🧬 Metadata")
+
+    def display(self):
+        master_key = filter_master_key(st.session_state["master_key"])
+        phenotype_column = "baseline_GP2_phenotype_for_qc"
+
+        plot1, plot2 = st.columns([1, 1.75])
     
-    previous_release = st.session_state.get('release_choice', None)
-    release_select()
-    
-    state_manager = DataStateManager()
-    master_key = state_manager.get_master_key()
-    
-    cohort_select(master_key)
-    
-    processor = DataProcessor()
-    master_key = processor.process_master_key(
-        st.session_state['master_key'],
-        st.session_state['release_choice']
-    )
 
-    st.title(f'{st.session_state["cohort_choice"]} Metadata')
+        if master_key.shape[0] != 0:
+            plot1.markdown("#### Stratify Age by:")
+            stratify = plot1.radio(
+                "Stratify Age by:",
+                ("None", "Sex", "Phenotype"),
+                label_visibility="collapsed",
+            )
 
-    meta_ancestry_select()
-    if st.session_state['meta_ancestry_choice'] != 'All':
-        master_key = master_key[master_key['nba_label'] == st.session_state['meta_ancestry_choice']]
+            if not "age_at_sample_collection" in master_key.columns:
+                plot2.error("Error: 'age_at_sample_collection' column not found in the DataFrame.")
+            
+            elif stratify == "Sex" and not "biological_sex_for_qc" in master_key.columns:
+                plot2.error("Error: 'biological_sex_for_qc' column not found in the DataFrame. Cannot stratify by Sex.")
+            
+            elif stratify == "Phenotype" and not phenotype_column in master_key.columns:
+                plot2.error(f"Error: '{phenotype_column}' column not found in the DataFrame. Cannot stratify by Phenotype.")
 
-    plot1, plot2 = st.columns([1, 1.75])
+            else:
+                if stratify == "None":
+                    fig = px.histogram(
+                        master_key,
+                        x="age_at_sample_collection",
+                        nbins=25,
+                        color_discrete_sequence=["#332288"],
+                        labels={
+                            "age_at_sample_collection": "Age at Sample Collection"
+                        },
+                    )
+                    fig.update_layout(
+                        title_text=f"<b>Age Distribution<b>",
+                        xaxis_title="Age at Sample Collection",
+                        yaxis_title="Count",
+                        bargap=0.1,
+                        autosize=True
+                    )
+                    plot2.plotly_chart(fig, use_container_width=True)
+                else:
+                    if stratify == "Sex":
+                        color_column = "biological_sex_for_qc"
+                        color_map = {"Male": "#332288", "Female": "#CC6677", "Other": "purple"}
+                        labels = {"age_at_sample_collection": "Age at Sample Collection", "biological_sex_for_qc": "Sex"}
+                        title = "<b>Age Distribution by Sex<b>"
+                    else: # stratify == "Phenotype"
+                        color_column = phenotype_column
+                        color_map = None
+                        labels = {"age_at_sample_collection": "Age at Sample Collection", phenotype_column: "Phenotype"}
+                        title = "<b>Age Distribution by Phenotype<b>"
 
-    master_key_age = master_key[master_key['Age'].notnull()]
-    if master_key_age.shape[0] != 0:
-        plot1.markdown('#### Stratify Age by:')
-        stratify = plot1.radio(
-            "Stratify Age by:",
-            ('None', 'Sex', 'Phenotype'),
-            label_visibility="collapsed"
-        )
-        
-        plotter = MetadataPlotter()
-        fig = plotter.plot_age_distribution(master_key, stratify)
-        plot2.plotly_chart(fig)
-        plot1.markdown('---')
+                    fig = px.histogram(
+                        master_key,
+                        x="age_at_sample_collection",
+                        color=color_column,
+                        nbins=25,
+                        color_discrete_map=color_map,
+                        labels=labels
+                    )
+                    
+                    unique_count = len(master_key[color_column].dropna().unique())
 
-    plot1.markdown('#### Phenotype Count Split by Sex')
-    combined_counts = processor.get_phenotype_counts(master_key)
-    plot1.dataframe(combined_counts)
+                    fig.update_layout(
+                        title_text=title,
+                        xaxis_title="Age at Sample Collection",
+                        yaxis_title="Count",
+                        bargap=0.1,
+                        autosize=True
+                    )
+                    plot2.plotly_chart(fig, use_container_width=True)
+
+            plot1.markdown("---")
+
+        master_key['biological_sex_for_qc'] = master_key['biological_sex_for_qc'].replace('Unknown', 'Other')
+        male_pheno = master_key.loc[
+            master_key["biological_sex_for_qc"] == "Male", phenotype_column
+        ]
+        female_pheno = master_key.loc[
+            master_key["biological_sex_for_qc"] == "Female", phenotype_column
+        ]
+
+        combined_counts = pd.DataFrame()
+        combined_counts["Male"] = male_pheno.value_counts()
+        combined_counts["Female"] = female_pheno.value_counts()
+        combined_counts = combined_counts.transpose()
+        combined_counts["Total"] = combined_counts.sum(axis=1)
+        combined_counts = combined_counts.fillna(0)
+        combined_counts = combined_counts.astype("int32")
+
+        plot1.markdown("#### Phenotype Count Split by Sex")
+        plot1.dataframe(combined_counts, use_container_width=True)
+
 
 if __name__ == "__main__":
-    main()
+    page = MetadataPage()
+    page.display()
