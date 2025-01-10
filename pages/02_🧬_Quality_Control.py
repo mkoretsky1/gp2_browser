@@ -204,8 +204,8 @@ class QualityControlPage:
 
     def load_qc_data(self) -> pd.DataFrame:
         """Load QC metrics data."""
-        qc_metrics_path = f'{st.session_state["release_bucket"]}/meta_data/qc_metrics/qc_metrics.csv'
-        return blob_as_csv(st.session_state["gp2_data_bucket"], qc_metrics_path)
+        return blob_as_csv(st.session_state["gt_app_utils_bucket"], 
+                  f'{st.session_state["release_qc_path"]}/qc_metrics.csv')
 
     def get_ancestry_mappings(self) -> tuple:
         """Get ancestry dictionaries based on release version."""
