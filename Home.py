@@ -2,17 +2,11 @@ import streamlit as st
 import pandas as pd
 from utils.utils import (
     get_gcloud_bucket,
-    blob_as_csv,
-    debug_dataframe,
-    MetadataPlotter,
-    MetadataProcessor,
     get_sidebar,
     place_logos,
 )
 from utils.state import (
-    initialize_state,
-    load_master_key,
-    filter_master_key,
+    initialize_state
 )
 import streamlit.components.v1 as components
 
@@ -36,19 +30,16 @@ class HomePage:
         initialize_state()
         get_sidebar(self)
 
-        # Place logos in sidebar
         place_logos()
 
     def display(self):
-        # Main title
         st.markdown(
             "<h1 style='text-align: center; color: #0f557a; font-family: Helvetica; '>GP2 Internal Cohort Browser</h1>",
             unsafe_allow_html=True,
         )
 
-        # Page formatting
-        sent1, sent2, sent3 = st.columns([1, 6, 1])  # holds brief overview sentences
-        exp1, exp2, exp3 = st.columns([1, 2, 1])  # holds expander for full description
+        sent1, sent2, sent3 = st.columns([1, 6, 1])
+        exp1, exp2, exp3 = st.columns([1, 2, 1])
 
         # sent2.markdown("##### Interactive tool to visualize quality control and ancestry prediction summary statistics across all GP2 cohorts. #####")
         sent2.markdown(
@@ -57,7 +48,6 @@ class HomePage:
             unsafe_allow_html=True,
         )
 
-        # Display expander with full project description
         overview = exp2.expander("Full Description", expanded=False)
         with overview:
             st.markdown(

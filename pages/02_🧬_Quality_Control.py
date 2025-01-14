@@ -270,7 +270,6 @@ class QualityControlPage:
 
         st.markdown('---')
         
-        # Variant filtering section
         st.header('QC Step 2: Variant-Level Filtering')
         with st.expander("Description", expanded=False):
             st.markdown(
@@ -283,7 +282,6 @@ class QualityControlPage:
                 'will not change based on cohort selection within the same release.'
             )
 
-        # Load and process QC metrics data
         df_qc = self.load_qc_data()
         df_merged = self.qc_processor.process_variant_filtering(df_qc)
         
@@ -293,7 +291,6 @@ class QualityControlPage:
         
         st.markdown('---')
         
-        # Display failed prune steps if any exist
         df_failed = df_qc[df_qc['pass'] == False].reset_index(drop=True)
         if not df_failed.empty:
             st.markdown("**Failed Prune Steps**")
