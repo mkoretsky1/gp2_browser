@@ -7,3 +7,4 @@ __pycache__/*
 .secrets
 visualization/__pycache__/*
 utils/__pycache__/*
+data

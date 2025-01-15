@@ -172,7 +172,7 @@ class AncestryPage:
                 left_on=['IID'], 
                 right_on=['GP2ID']
             ).drop(columns=['GP2ID'], axis=1)
-
+            
             proj_pca_cohort['plot_label'] = 'Predicted'
             ref_pca['plot_label'] = ref_pca['label']
 
@@ -181,13 +181,11 @@ class AncestryPage:
             pca_col1, pca_col2 = st.columns([1.5, 3])
             st.markdown('---')
             col1, col2 = st.columns([1.5, 3])
-            print(proj_pca_cohort.columns)
             combined_labelled = (
                 proj_pca_cohort[['IID', 'plot_label']]
                 .rename(columns={'plot_label': 'Predicted Ancestry'})
             )
             
-            print(combined_labelled.columns)
             holdValues = combined_labelled['Predicted Ancestry'].value_counts().rename_axis(
                 'Predicted Ancestry'
             ).reset_index(name='Counts')
