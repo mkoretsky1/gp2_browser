@@ -181,12 +181,12 @@ class AncestryPage:
             pca_col1, pca_col2 = st.columns([1.5, 3])
             st.markdown('---')
             col1, col2 = st.columns([1.5, 3])
-            combined_labelled = (
-                proj_pca_cohort[['IID', 'plot_label']]
-                .rename(columns={'plot_label': 'Predicted Ancestry'})
+            combined_labeled = (
+                proj_pca_cohort[['IID', 'nba_label']]
+                .rename(columns={'nba_label': 'Predicted Ancestry'})
             )
             
-            holdValues = combined_labelled['Predicted Ancestry'].value_counts().rename_axis(
+            holdValues = combined_labeled['Predicted Ancestry'].value_counts().rename_axis(
                 'Predicted Ancestry'
             ).reset_index(name='Counts')
 
@@ -230,7 +230,7 @@ class AncestryPage:
                         "All Predicted samples and their respective labels. "
                         "Use ⌘+F / Ctrl+F to search."
                     )
-                st.dataframe(combined_labelled, hide_index=True, use_container_width=True)
+                st.dataframe(combined_labeled, hide_index=True, use_container_width=True)
 
             with col2:
                 plot_3d(proj_pca_cohort, 'nba_label')
