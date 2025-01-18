@@ -5,7 +5,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import streamlit as st
-from hold_data import blob_as_csv, get_gcloud_bucket, config_page, rv_select
+from utils.hold_data import blob_as_csv, get_gcloud_bucket, config_page, rv_select
 
 config_page('GP2 Rare Variant Browser')
 

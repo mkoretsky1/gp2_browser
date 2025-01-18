@@ -9,11 +9,11 @@ from utils.utils import (
 )
 from utils.state import initialize_state
 
+initialize_state()
 
 class MetadataPage:
     def __init__(self):
         st.set_page_config(layout="wide")
-        initialize_state()
         get_sidebar(self)
 
         self.metadata_plotter = MetadataPlotter()

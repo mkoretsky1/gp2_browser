@@ -9,7 +9,7 @@ from utils.state import (
     initialize_state
 )
 import streamlit.components.v1 as components
-
+initialize_state()
 # Retrieve the page icon before calling st.set_page_config
 if 'gp2_bg' not in st.session_state:
     frontend_bucket_name = 'gt_app_utils'
@@ -27,7 +27,6 @@ st.set_page_config(
 
 class HomePage:
     def __init__(self):
-        initialize_state()
         get_sidebar(self)
 
         place_logos()

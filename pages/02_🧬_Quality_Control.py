@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from utils.utils import get_sidebar, filter_master_key, blob_as_csv
 from utils.state import initialize_state
 
+initialize_state()
 
 @dataclass
 class QCPlotter:
@@ -193,7 +194,7 @@ class QCProcessor:
 class QualityControlPage:
     def __init__(self):
         st.set_page_config(layout="wide")
-        initialize_state()
+
         get_sidebar(self)
         
         self.qc_plotter = QCPlotter()

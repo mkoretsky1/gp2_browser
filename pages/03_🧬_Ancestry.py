@@ -11,6 +11,7 @@ from utils.utils import (
     get_gcloud_bucket,
 )
 
+initialize_state()
 
 def plot_3d(
     labeled_df: pd.DataFrame,
@@ -113,8 +114,6 @@ class AncestryPage:
     def __init__(self):
         # Set page-wide config
         st.set_page_config(layout="wide")
-        # Initialize session state
-        initialize_state()
         # Build the sidebar (this sets release_choice, cohort_choice, etc.)
         get_sidebar(self)
 
@@ -126,23 +125,28 @@ class AncestryPage:
         """
         gp2_data_bucket = st.session_state["gt_app_utils_bucket"]
 
-        # Master key is already loaded in st.session_state["master_key"] by initialize_state()
-        # Let's filter it again for extra safety (or remove filter if not needed).
-        st.session_state["master_key"] = filter_master_key(st.session_state["master_key"])
+        # Grab the full/unmodified master_key from session_state
+        master_key_full = st.session_state["master_key"]
 
-        # If the user selects a specific cohort (other than FULL), subset the master_key by 'study'
+        # Filter locally (without overwriting the master key in session_state)
+        master_key_filtered = filter_master_key(master_key_full)
+
+        # If the user selects a specific cohort (other than FULL), subset the filtered DataFrame
         if (
             st.session_state["cohort_choice"]
             and not st.session_state["cohort_choice"].startswith("GP2 Release")
         ):
-            st.session_state["master_key"] = st.session_state["master_key"][
-                st.session_state["master_key"]["study"] == st.session_state["cohort_choice"]
+            master_key_filtered = master_key_filtered[
+                master_key_filtered["study"] == st.session_state["cohort_choice"]
             ]
 
-        # Remove pruned samples for PCA
-        master_key = filter_master_key(st.session_state["master_key"])
-        master_key.loc[:,'pruned'] = np.where(master_key.nba_prune_reason.isna(), False, True)
-        master_key = master_key[master_key["pruned"] == 0]
+        # Remove pruned samples
+        master_key_filtered["pruned"] = np.where(
+            master_key_filtered.nba_prune_reason.isna(), 
+            False, 
+            True
+        )
+        master_key_filtered = master_key_filtered[master_key_filtered["pruned"] == 0]
 
         # Create tabs
         tabPCA, tabPredStats, tabPie, tabAdmix, tabMethods = st.tabs([
@@ -167,7 +171,7 @@ class AncestryPage:
 
             # Merge with master_key to get final labels
             proj_pca_cohort = proj_pca.merge(
-                master_key[['GP2ID', 'nba_label', 'study']], 
+                master_key_filtered[['GP2ID', 'nba_label', 'study']], 
                 how='inner', 
                 left_on=['IID'], 
                 right_on=['GP2ID']
@@ -185,7 +189,7 @@ class AncestryPage:
                 proj_pca_cohort[['IID', 'nba_label']]
                 .rename(columns={'nba_label': 'Predicted Ancestry'})
             )
-            
+            st.dataframe(proj_pca)
             holdValues = combined_labeled['Predicted Ancestry'].value_counts().rename_axis(
                 'Predicted Ancestry'
             ).reset_index(name='Counts')
@@ -211,8 +215,9 @@ class AncestryPage:
             with pca_col2:
                 if not selectionList.empty:
                     selected_pca = proj_pca_cohort.copy()
+                
                     selected_pca.drop(
-                        selected_pca[~selected_pca['label'].isin(selectionList)].index,
+                        selected_pca[~selected_pca['nba_label'].isin(selectionList)].index,
                         inplace=True
                     )
                     # For selected categories, unify label to 'Predicted'
@@ -323,13 +328,13 @@ class AncestryPage:
 
             # Predicted panel
             df_pred_prop = (
-                master_key['nba_label']
+                master_key_filtered['nba_label']
                 .value_counts(normalize=True)
                 .rename_axis('Ancestry Category')
                 .reset_index(name='Proportion')
             )
             pred_counts = (
-                master_key['nba_label']
+                master_key_filtered['nba_label']
                 .value_counts()
                 .rename_axis('Ancestry Category')
                 .reset_index(name='Counts')
