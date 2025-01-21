@@ -13,7 +13,7 @@ from utils.quality_control_utils import (
 
 
 def main():
-    """Main function to orchestrate the QC process and visualization."""
+    
     config_page('Quality Control')
     release_select()
 

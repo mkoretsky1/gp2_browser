@@ -3,6 +3,7 @@ import streamlit as st
 from io import StringIO
 from google.cloud import storage
 
+
 # functions used on every pages
 def get_master_key(bucket):
     """Retrieve the master key based on the selected release."""

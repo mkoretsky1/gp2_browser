@@ -12,11 +12,11 @@ from utils.hold_data import (
     rename_columns,
     update_sex_labels
 )
-
 from utils.metadata_utils import plot_age_distribution, display_phenotype_counts
 
 def main():
     config_page('Metadata')
+    
     release_select()
     gp2_data_bucket = get_gcloud_bucket('gp2tier2')
     
