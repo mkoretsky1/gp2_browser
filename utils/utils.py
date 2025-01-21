@@ -179,104 +179,104 @@ def filter_master_key(master_key: pd.DataFrame) -> pd.DataFrame:
 
     return master_key
 
-@dataclass
-class MetadataPlotter:
-    def plot_age_distribution(
-        self, df: pd.DataFrame, stratify_by: str, phenotype_column: str = "baseline_GP2_phenotype_for_qc"
-    ) -> px.scatter:
-        """
-        Generate an age distribution plot, optionally stratified.
+# @dataclass
+# class MetadataPlotter:
+#     def plot_age_distribution(
+#         self, df: pd.DataFrame, stratify_by: str, phenotype_column: str = "baseline_GP2_phenotype_for_qc"
+#     ) -> px.scatter:
+#         """
+#         Generate an age distribution plot, optionally stratified.
 
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Input DataFrame containing age and other relevant columns.
-        stratify_by : str
-            Column name to use for stratification ('None', 'Sex', or 'Phenotype').
-        phenotype_column : str
-            Column name for phenotype.
+#         Parameters
+#         ----------
+#         df : pd.DataFrame
+#             Input DataFrame containing age and other relevant columns.
+#         stratify_by : str
+#             Column name to use for stratification ('None', 'Sex', or 'Phenotype').
+#         phenotype_column : str
+#             Column name for phenotype.
 
-        Returns
-        -------
-        px.scatter
-            A Plotly scatter plot object.
-        """
-        df['biological_sex_for_qc'] = df['biological_sex_for_qc'].replace('Unknown', 'Other')
-        if stratify_by == "None":
-            fig = px.histogram(
-                df,
-                x="age_at_sample_collection",
-                title="Age Distribution",
-                labels={"age_at_sample_collection": "Age at Sample Collection"},
-                color_discrete_sequence=px.colors.qualitative.Set2,
-            )
-        elif stratify_by == "Sex":
-            fig = px.histogram(
-                df,
-                x="age_at_sample_collection",
-                color="biological_sex_for_qc",
-                title=f"Age Distribution (Stratified by {stratify_by})",
-                labels={"age_at_sample_collection": "Age at Sample Collection", "biological_sex_for_qc": "Sex"},
-                color_discrete_sequence=px.colors.qualitative.Set2,
-            )
-        elif stratify_by == "Phenotype":
-            fig = px.histogram(
-                df,
-                x="age_at_sample_collection",
-                color=phenotype_column,
-                title=f"Age Distribution (Stratified by {stratify_by})",
-                labels={"age_at_sample_collection": "Age at Sample Collection", phenotype_column: "Phenotype"},
-                color_discrete_sequence=px.colors.qualitative.Set2,
-            )
+#         Returns
+#         -------
+#         px.scatter
+#             A Plotly scatter plot object.
+#         """
+#         df['biological_sex_for_qc'] = df['biological_sex_for_qc'].replace('Unknown', 'Other')
+#         if stratify_by == "None":
+#             fig = px.histogram(
+#                 df,
+#                 x="age_at_sample_collection",
+#                 title="Age Distribution",
+#                 labels={"age_at_sample_collection": "Age at Sample Collection"},
+#                 color_discrete_sequence=px.colors.qualitative.Set2,
+#             )
+#         elif stratify_by == "Sex":
+#             fig = px.histogram(
+#                 df,
+#                 x="age_at_sample_collection",
+#                 color="biological_sex_for_qc",
+#                 title=f"Age Distribution (Stratified by {stratify_by})",
+#                 labels={"age_at_sample_collection": "Age at Sample Collection", "biological_sex_for_qc": "Sex"},
+#                 color_discrete_sequence=px.colors.qualitative.Set2,
+#             )
+#         elif stratify_by == "Phenotype":
+#             fig = px.histogram(
+#                 df,
+#                 x="age_at_sample_collection",
+#                 color=phenotype_column,
+#                 title=f"Age Distribution (Stratified by {stratify_by})",
+#                 labels={"age_at_sample_collection": "Age at Sample Collection", phenotype_column: "Phenotype"},
+#                 color_discrete_sequence=px.colors.qualitative.Set2,
+#             )
 
-        fig.update_layout(
-            xaxis_title="Age at Sample Collection",
-            yaxis_title="Count",
-            bargap=0.2,
-            legend_title=stratify_by if stratify_by != "None" else "",
-        )
+#         fig.update_layout(
+#             xaxis_title="Age at Sample Collection",
+#             yaxis_title="Count",
+#             bargap=0.2,
+#             legend_title=stratify_by if stratify_by != "None" else "",
+#         )
 
-        return fig
+#         return fig
 
 
-@dataclass
-class MetadataProcessor:
-    def get_phenotype_counts(self, df: pd.DataFrame, phenotype_column: str = "baseline_GP2_phenotype_for_qc") -> pd.DataFrame:
-        """
-        Calculate phenotype counts, optionally split by sex.
+# @dataclass
+# class MetadataProcessor:
+#     def get_phenotype_counts(self, df: pd.DataFrame, phenotype_column: str = "baseline_GP2_phenotype_for_qc") -> pd.DataFrame:
+#         """
+#         Calculate phenotype counts, optionally split by sex.
 
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Input DataFrame containing 'Phenotype' and 'Sex' columns.
-        phenotype_column : str
-            Column name for phenotype.
+#         Parameters
+#         ----------
+#         df : pd.DataFrame
+#             Input DataFrame containing 'Phenotype' and 'Sex' columns.
+#         phenotype_column : str
+#             Column name for phenotype.
 
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame with phenotype counts, optionally split by sex.
-        """
-        df['biological_sex_for_qc'] = df['biological_sex_for_qc'].replace('Unknown', 'Other')
-        if phenotype_column not in df.columns:
-            st.error(
-                f"'{phenotype_column}' column not found in the DataFrame for Release {st.session_state['release_choice']}. "
-                "Please select a different release."
-            )
-            st.stop()
+#         Returns
+#         -------
+#         pd.DataFrame
+#             DataFrame with phenotype counts, optionally split by sex.
+#         """
+#         df['biological_sex_for_qc'] = df['biological_sex_for_qc'].replace('Unknown', 'Other')
+#         if phenotype_column not in df.columns:
+#             st.error(
+#                 f"'{phenotype_column}' column not found in the DataFrame for Release {st.session_state['release_choice']}. "
+#                 "Please select a different release."
+#             )
+#             st.stop()
             
-        if "biological_sex_for_qc" not in df.columns:
-            counts = df[phenotype_column].value_counts().reset_index()
-            counts.columns = [phenotype_column, "Count"]
-        else:
-            counts = (
-                df.groupby([phenotype_column, "biological_sex_for_qc"])
-                .size()
-                .reset_index(name="Count")
-            )
-            counts = counts.pivot(
-                index=phenotype_column, columns="biological_sex_for_qc", values="Count"
-            ).reset_index()
-            counts.columns.name = None  # Remove the 'Sex' name from columns
+#         if "biological_sex_for_qc" not in df.columns:
+#             counts = df[phenotype_column].value_counts().reset_index()
+#             counts.columns = [phenotype_column, "Count"]
+#         else:
+#             counts = (
+#                 df.groupby([phenotype_column, "biological_sex_for_qc"])
+#                 .size()
+#                 .reset_index(name="Count")
+#             )
+#             counts = counts.pivot(
+#                 index=phenotype_column, columns="biological_sex_for_qc", values="Count"
+#             ).reset_index()
+#             counts.columns.name = None  # Remove the 'Sex' name from columns
 
-        return counts
+#         return counts

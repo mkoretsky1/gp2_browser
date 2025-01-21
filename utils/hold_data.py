@@ -1,14 +1,51 @@
-import os
-import sys
-import subprocess
-import numpy as np
 import pandas as pd
 import streamlit as st
 from io import StringIO
-
 from google.cloud import storage
 
 # functions used on every pages
+def get_master_key(bucket):
+    """Retrieve the master key based on the selected release."""
+    release_choice = st.session_state['release_choice']
+    base_path = f"{st.session_state['release_bucket']}/clinical_data/"
+    master_key_path = (
+        f"{base_path}master_key_release7_final.csv" 
+        if release_choice == 8 else 
+        f"{base_path}master_key_release{release_choice}_final.csv"
+    )
+    return blob_as_csv(bucket, master_key_path, sep=',')
+
+def filter_by_cohort(master_key):
+    """Filter the master key based on the selected cohort."""
+    cohort_select(master_key)
+    master_key = master_key[master_key['pruned'] == 0]
+    return master_key
+
+def filter_by_ancestry(master_key):
+    """Filter the master key by ancestry selection."""
+    meta_ancestry_select()
+    meta_ancestry_choice = st.session_state['meta_ancestry_choice']
+    if meta_ancestry_choice != 'All':
+        master_key = master_key[master_key['label'] == meta_ancestry_choice]
+    return master_key
+
+def rename_columns(master_key):
+    """Standardize column names based on the release version."""
+    release_choice = st.session_state['release_choice']
+    column_map = {
+        6: {'age': 'Age', 'sex_for_qc': 'Sex', 'gp2_phenotype': 'Phenotype'},
+        7: {'age_at_sample_collection': 'Age', 'biological_sex_for_qc': 'Sex', 'baseline_GP2_phenotype_for_qc': 'Phenotype'},
+        8: {'age_at_sample_collection': 'Age', 'biological_sex_for_qc': 'Sex', 'baseline_GP2_phenotype_for_qc': 'Phenotype'}
+    }
+    if release_choice in column_map:
+        master_key.rename(columns=column_map[release_choice], inplace=True)
+    return master_key
+
+def update_sex_labels(master_key):
+    """Update the Sex column to verbose labels."""
+    sex_map = {1: 'Male', 2: 'Female', 0: 'Unknown'}
+    master_key['Sex'].replace(sex_map, inplace=True)
+    return master_key
 
 # reads in file from google cloud folder
 def blob_as_csv(bucket, path, sep='\s+', header='infer'):
@@ -87,8 +124,19 @@ def release_select():
         st.session_state['old_release_choice'] = ""
     
     # dynamic change of release with selector
-    st.session_state['release_choice'] = st.sidebar.selectbox(label='Release Selection', label_visibility='collapsed', options=options, index=options.index(st.session_state['release_choice']), key='new_release_choice', on_change=release_callback)
-
+    st.session_state['release_choice'] = (
+        st.sidebar.selectbox(
+            label='Release Selection', 
+            label_visibility='collapsed', 
+            options=options, 
+            index=options.index(
+                st.session_state['release_choice']
+                ), 
+            key='new_release_choice', 
+            on_change=release_callback
+        )
+    )
+    
     # folder name based on release selection
     release_folder_dict = {1:'release1_29112021', 2:'release2_06052022', 3:'release3_31102022', 4:'release4_14022023', 
                            5:'release5_11052023', 6:'release6_21122023', 7:'release7_30042024', 8:'release7_30042024'}
@@ -110,6 +158,7 @@ def cohort_select(master_key):
     # set selector default
     if 'cohort_choice' not in st.session_state:
         st.session_state['cohort_choice'] = options[0]
+
     # error message for when cohort is not available in a previous release
     if st.session_state['cohort_choice'] not in options:
         # exclude full releases
@@ -132,9 +181,8 @@ def cohort_select(master_key):
         st.session_state['master_key'] = master_key_cohort 
 
     # check for pruned samples
-    pruned_reasons = st.session_state.master_key.loc[~master_key['nba_prune_reason'].isna(),'nba_prune_reason'].value_counts()
-    if len(pruned_reasons>0):
-        pruned_samples = pruned_reasons[1]
+    if 1 in st.session_state.master_key['pruned'].value_counts():
+        pruned_samples = st.session_state.master_key['pruned'].value_counts()[1]
     else:
         pruned_samples = 0
     
@@ -160,7 +208,7 @@ def meta_ancestry_select():
     master_key = st.session_state['master_key']
 
     # set options
-    meta_ancestry_options = ['All'] + [label for label in master_key['nba_label'].dropna().unique()]
+    meta_ancestry_options = ['All'] + [label for label in master_key['label'].dropna().unique()]
 
     # set default
     if 'meta_ancestry_choice' not in st.session_state:
@@ -189,7 +237,7 @@ def admix_ancestry_select():
     master_key = st.session_state['master_key']
 
     # set options
-    admix_ancestry_options = ['All'] + [label for label in master_key['nba_label'].dropna().unique()]
+    admix_ancestry_options = ['All'] + [label for label in master_key['label'].dropna().unique()]
 
     # set default
     if 'admix_ancestry_choice' not in st.session_state:
