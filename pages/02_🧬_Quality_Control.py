@@ -21,23 +21,32 @@ def main():
 
     funnel_df = prepare_funnel_data(master_key)
     ancestry_dict = {
-        'AFR': 'African', 'SAS': 'South Asian', 'EAS': 'East Asian', 'EUR': 'European',
-        'AMR': 'American', 'AJ': 'Ashkenazi Jewish', 'AAC': 'African American/Afro-Caribbean',
-        'CAS': 'Central Asian', 'MDE': 'Middle Eastern', 'FIN': 'Finnish', 'CAH': 'Complex Admixture History'
+        'AFR': 'African', 
+        'SAS': 'South Asian', 
+        'EAS': 'East Asian', 
+        'EUR': 'European',
+        'AMR': 'American', 
+        'AJ': 'Ashkenazi Jewish', 
+        'AAC': 'African American/Afro-Caribbean',
+        'CAS': 'Central Asian', 
+        'MDE': 'Middle Eastern', 
+        'FIN': 'Finnish', 
+        'CAH': 'Complex Admixture History'
     }
+
     ancestry_index = {
-        'AFR': 3, 'SAS': 7, 'EAS': 8, 'EUR': 0, 'AMR': 2, 'AJ': 1,
-        'AAC': 4, 'CAS': 5, 'MDE': 6, 'FIN': 9, 'CAH': 10
+        'AFR': 3,
+        'SAS': 7, 
+        'EAS': 8, 
+        'EUR': 0, 
+        'AMR': 2, 
+        'AJ': 1,
+        'AAC': 4, 
+        'CAS': 5, 
+        'MDE': 6, 
+        'FIN': 9, 
+        'CAH': 10
     }
-
-    if st.session_state['release_choice'] < 3:
-        for key in ['CAS', 'MDE']:
-            ancestry_dict.pop(key, None)
-            ancestry_index.pop(key, None)
-
-    if st.session_state['release_choice'] < 6:
-        ancestry_dict.pop('CAH', None)
-        ancestry_index.pop('CAH', None)
 
     relatedness_df = prepare_relatedness_data(master_key, ancestry_dict, ancestry_index)
     variant_df = prepare_variant_data(df_qc)
