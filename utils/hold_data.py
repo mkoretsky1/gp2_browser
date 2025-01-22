@@ -2,366 +2,374 @@ import pandas as pd
 import streamlit as st
 from io import StringIO
 from google.cloud import storage
+from utils.config import AppConfig
 
+config = AppConfig()
 
-# functions used on every pages
+def blob_as_csv(bucket, path, sep=r"\s+", header="infer"):
+    blob = bucket.get_blob(path)
+    blob_bytes = blob.download_as_bytes()
+    blob_str = str(blob_bytes, "utf-8")
+    blob_io = StringIO(blob_str)
+    df = pd.read_csv(blob_io, sep=sep, header=header)
+    return df
+
+def get_gcloud_bucket(bucket_name):
+    storage_client = storage.Client(project=config.GCP_PROJECT)
+    bucket = storage_client.bucket(bucket_name, user_project=config.GCP_PROJECT)
+    return bucket
+
 def get_master_key(bucket):
-    """Retrieve the master key based on the selected release."""
-    release_choice = st.session_state['release_choice']
-    base_path = f"{st.session_state['release_bucket']}/clinical_data/"
-    master_key_path = (
-        f"{base_path}master_key_release7_final.csv" 
-        if release_choice == 8 else 
-        f"{base_path}master_key_release{release_choice}_final.csv"
-    )
-    return blob_as_csv(bucket, master_key_path, sep=',')
+    release_choice = st.session_state["release_choice"]
+    base_path = f"{st.session_state['release_bucket']}/clinical_data"
+    if release_choice == 8:
+        master_key_path = f"{base_path}/master_key_release7_final.csv"
+    else:
+        master_key_path = f"{base_path}/master_key_release{release_choice}_final.csv"
+
+    return blob_as_csv(bucket, master_key_path, sep=",")
 
 def filter_by_cohort(master_key):
-    """Filter the master key based on the selected cohort."""
     cohort_select(master_key)
-    master_key = master_key[master_key['pruned'] == 0]
+    master_key = master_key[master_key["pruned"] == 0]
     return master_key
 
 def filter_by_ancestry(master_key):
-    """Filter the master key by ancestry selection."""
     meta_ancestry_select()
-    meta_ancestry_choice = st.session_state['meta_ancestry_choice']
-    if meta_ancestry_choice != 'All':
-        master_key = master_key[master_key['label'] == meta_ancestry_choice]
+    meta_ancestry_choice = st.session_state["meta_ancestry_choice"]
+    if meta_ancestry_choice != "All":
+        master_key = master_key[master_key["label"] == meta_ancestry_choice]
     return master_key
 
 def rename_columns(master_key):
-    """Standardize column names based on the release version."""
-    release_choice = st.session_state['release_choice']
-    column_map = {
-        6: {'age': 'Age', 'sex_for_qc': 'Sex', 'gp2_phenotype': 'Phenotype'},
-        7: {'age_at_sample_collection': 'Age', 'biological_sex_for_qc': 'Sex', 'baseline_GP2_phenotype_for_qc': 'Phenotype'},
-        8: {'age_at_sample_collection': 'Age', 'biological_sex_for_qc': 'Sex', 'baseline_GP2_phenotype_for_qc': 'Phenotype'}
-    }
-    if release_choice in column_map:
-        master_key.rename(columns=column_map[release_choice], inplace=True)
+    release_choice = st.session_state["release_choice"]
+    column_map = config.RELEASE_COLUMN_MAP.get(release_choice, {})
+    if column_map:
+        master_key.rename(columns=column_map, inplace=True)
     return master_key
 
 def update_sex_labels(master_key):
-    """Update the Sex column to verbose labels."""
-    sex_map = {1: 'Male', 2: 'Female', 0: 'Unknown'}
-    master_key['Sex'].replace(sex_map, inplace=True)
+    master_key["Sex"].replace(config.SEX_MAP, inplace=True)
     return master_key
 
-# reads in file from google cloud folder
-def blob_as_csv(bucket, path, sep='\s+', header='infer'):
-    blob = bucket.get_blob(path)
-    blob = blob.download_as_bytes()
-    blob = str(blob, 'utf-8')
-    blob = StringIO(blob)
-    df = pd.read_csv(blob, sep=sep, header=header)
-    return df
-
-# gets folders from Google Cloud
-def get_gcloud_bucket(bucket_name): 
-    storage_client = storage.Client(project='gp2-release-terra')
-    bucket = storage_client.bucket(bucket_name, user_project='gp2-release-terra')
-    return bucket
-
-# config page with gp2 logo in browser tab
 def config_page(title):
-    if 'gp2_bg' in st.session_state:
+    if "gp2_bg" in st.session_state:
         st.set_page_config(
             page_title=title,
             page_icon=st.session_state.gp2_bg,
             layout="wide",
         )
-    else: 
-        frontend_bucket_name = 'gt_app_utils'
-        frontend_bucket = get_gcloud_bucket(frontend_bucket_name)
-        gp2_bg = frontend_bucket.get_blob('gp2_2.jpg')
-        gp2_bg = gp2_bg.download_as_bytes()
-        st.session_state['gp2_bg'] = gp2_bg
+    else:
+        frontend_bucket = get_gcloud_bucket(config.FRONTEND_BUCKET_NAME)
+        gp2_bg_blob = frontend_bucket.get_blob("gp2_2.jpg")
+        gp2_bg = gp2_bg_blob.download_as_bytes()
+        st.session_state["gp2_bg"] = gp2_bg
         st.set_page_config(
             page_title=title,
             page_icon=gp2_bg,
             layout="wide"
         )
 
-# load and place sidebar logos
 def place_logos():
     sidebar1, sidebar2 = st.sidebar.columns(2)
-    if ('card_removebg' in st.session_state) and ('redlat' in st.session_state):
+    if ("card_removebg" in st.session_state) and ("redlat" in st.session_state):
         sidebar1.image(st.session_state.card_removebg, use_container_width=True)
         sidebar2.image(st.session_state.gp2_removebg, use_container_width=True)
         st.sidebar.image(st.session_state.redlat, use_container_width=True)
     else:
-        frontend_bucket_name = 'gt_app_utils'
-        frontend_bucket = get_gcloud_bucket(frontend_bucket_name)
-        card_removebg = frontend_bucket.get_blob('card-removebg.png')
-        card_removebg = card_removebg.download_as_bytes()
-        gp2_removebg = frontend_bucket.get_blob('gp2_2-removebg.png')
-        gp2_removebg = gp2_removebg.download_as_bytes()
-        redlat = frontend_bucket.get_blob('Redlat.png')
-        redlat = redlat.download_as_bytes()
-        st.session_state['card_removebg'] = card_removebg
-        st.session_state['gp2_removebg'] = gp2_removebg
-        st.session_state['redlat'] = redlat
+        frontend_bucket = get_gcloud_bucket(config.FRONTEND_BUCKET_NAME)
+        card_removebg_blob = frontend_bucket.get_blob("card-removebg.png")
+        card_removebg = card_removebg_blob.download_as_bytes()
+        gp2_removebg_blob = frontend_bucket.get_blob("gp2_2-removebg.png")
+        gp2_removebg = gp2_removebg_blob.download_as_bytes()
+        redlat_blob = frontend_bucket.get_blob("Redlat.png")
+        redlat = redlat_blob.download_as_bytes()
+        st.session_state["card_removebg"] = card_removebg
+        st.session_state["gp2_removebg"] = gp2_removebg
+        st.session_state["redlat"] = redlat
         sidebar1.image(card_removebg, use_container_width=True)
         sidebar2.image(gp2_removebg, use_container_width=True)
         st.sidebar.image(redlat, use_container_width=True)
 
-# sidebar selectors
-        
-# release callback for session state
 def release_callback():
-    st.session_state['old_release_choice'] = st.session_state['release_choice']
-    st.session_state['release_choice'] = st.session_state['new_release_choice']
+    st.session_state["old_release_choice"] = st.session_state["release_choice"]
+    st.session_state["release_choice"] = st.session_state["new_release_choice"]
 
-# release select
 def release_select():
-    st.sidebar.markdown('### **Choose a release!**')
-    options = [i for i in range(6,9)]
+    st.sidebar.markdown("### **Choose a release!**")
+    release_options = [6, 7, 8]
 
-    # set selector default
-    if 'release_choice' not in st.session_state:
-        st.session_state['release_choice'] = options[0]
-    if 'old_release_choice' not in st.session_state:
-        st.session_state['old_release_choice'] = ""
-    
-    # dynamic change of release with selector
-    st.session_state['release_choice'] = (
-        st.sidebar.selectbox(
-            label='Release Selection', 
-            label_visibility='collapsed', 
-            options=options, 
-            index=options.index(
-                st.session_state['release_choice']
-                ), 
-            key='new_release_choice', 
-            on_change=release_callback
-        )
+    if "release_choice" not in st.session_state:
+        st.session_state["release_choice"] = release_options[0]
+    if "old_release_choice" not in st.session_state:
+        st.session_state["old_release_choice"] = ""
+
+    st.session_state["release_choice"] = st.sidebar.selectbox(
+        label="Release Selection",
+        label_visibility="collapsed",
+        options=release_options,
+        index=release_options.index(st.session_state["release_choice"]),
+        key="new_release_choice",
+        on_change=release_callback
     )
-    
-    # folder name based on release selection
-    release_folder_dict = {
-        1:'release1_29112021', 
-        2:'release2_06052022', 
-        3:'release3_31102022', 
-        4:'release4_14022023', 
-        5:'release5_11052023', 
-        6:'release6_21122023', 
-        7:'release7_30042024', 
-        8:'release7_30042024'
-    }
-    st.session_state['release_bucket'] = release_folder_dict[st.session_state['release_choice']]
 
-# cohort callback for session state
+    st.session_state["release_bucket"] = config.RELEASE_BUCKET_MAP[st.session_state["release_choice"]]
+
 def cohort_callback():
-    st.session_state['old_cohort_choice'] = st.session_state['cohort_choice']
-    st.session_state['cohort_choice'] = st.session_state['new_cohort_choice']
+    """
+    Update session state upon changing the cohort selection.
+    """
+    st.session_state["old_cohort_choice"] = st.session_state["cohort_choice"]
+    st.session_state["cohort_choice"] = st.session_state["new_cohort_choice"]
 
-# cohort select
 def cohort_select(master_key):
-    st.sidebar.markdown('### **Choose a cohort!**', unsafe_allow_html=True)
+    """
+    Sidebar widget for selecting the cohort.
+    """
+    st.sidebar.markdown("### **Choose a cohort!**", unsafe_allow_html=True)
 
-    # get cohort options
-    options=[f'GP2 Release {st.session_state["release_choice"]} FULL']+[study for study in master_key['study'].unique()]
-    full_release_options=[f'GP2 Release {i} FULL' for i in range(1,9)] 
+    release_value = st.session_state["release_choice"]
+    options = [f"GP2 Release {release_value} FULL"] + list(master_key["study"].unique())
+    full_release_options = [f"GP2 Release {i} FULL" for i in range(1, 9)]
 
-    # set selector default
-    if 'cohort_choice' not in st.session_state:
-        st.session_state['cohort_choice'] = options[0]
+    if "cohort_choice" not in st.session_state:
+        st.session_state["cohort_choice"] = options[0]
 
-    # error message for when cohort is not available in a previous release
-    if st.session_state['cohort_choice'] not in options:
-        # exclude full releases
-        if (st.session_state['cohort_choice'] not in full_release_options):
-            st.error(f"Cohort: {st.session_state['cohort_choice']} not available for GP2 Release {st.session_state['release_choice']}. \
-                    Displaying GP2 Release {st.session_state['release_choice']} FULL instead!")
-        st.session_state['cohort_choice'] = options[0]
+    if st.session_state["cohort_choice"] not in options:
+        if st.session_state["cohort_choice"] not in full_release_options:
+            st.error(
+                f"Cohort: {st.session_state['cohort_choice']} not available for "
+                f"GP2 Release {release_value}. Displaying GP2 Release "
+                f"{release_value} FULL instead!"
+            )
+        st.session_state["cohort_choice"] = options[0]
 
-    if 'old_cohort_choice' not in st.session_state:
-        st.session_state['old_cohort_choice'] = ""
+    if "old_cohort_choice" not in st.session_state:
+        st.session_state["old_cohort_choice"] = ""
 
-    # dynamic change of cohort with selector
-    st.session_state['cohort_choice'] = st.sidebar.selectbox(label = 'Cohort Selection', label_visibility = 'collapsed', options=options, index=options.index(st.session_state['cohort_choice']), key='new_cohort_choice', on_change=cohort_callback)
+    st.session_state["cohort_choice"] = st.sidebar.selectbox(
+        label="Cohort Selection",
+        label_visibility="collapsed",
+        options=options,
+        index=options.index(st.session_state["cohort_choice"]),
+        key="new_cohort_choice",
+        on_change=cohort_callback
+    )
 
-    if st.session_state['cohort_choice'] == f'GP2 Release {st.session_state["release_choice"]} FULL':
-        st.session_state['master_key'] = master_key
+    if st.session_state["cohort_choice"] == f"GP2 Release {release_value} FULL":
+        st.session_state["master_key"] = master_key
     else:
-        master_key_cohort = master_key[master_key['study'] == st.session_state['cohort_choice']]
-        # subsets master key to only include selected cohort
-        st.session_state['master_key'] = master_key_cohort 
+        master_key_cohort = master_key[master_key["study"] == st.session_state["cohort_choice"]]
+        st.session_state["master_key"] = master_key_cohort
 
-    # check for pruned samples
-    if 1 in st.session_state.master_key['pruned'].value_counts():
-        pruned_samples = st.session_state.master_key['pruned'].value_counts()[1]
-    else:
-        pruned_samples = 0
-    
-    total_count = st.session_state['master_key'].shape[0]
+    pruned_counts = st.session_state.master_key["pruned"].value_counts()
+    pruned_samples = pruned_counts[1] if 1 in pruned_counts else 0
+    total_count = st.session_state["master_key"].shape[0]
 
-    # sidebar metrics
-    st.sidebar.metric(" ", st.session_state['cohort_choice'])
-    st.sidebar.metric("Number of Samples in Dataset:", f'{total_count:,}')
-    st.sidebar.metric("Number of Samples After Pruning:", f'{(total_count-pruned_samples):,}')
+    st.sidebar.metric(" ", st.session_state["cohort_choice"])
+    st.sidebar.metric("Number of Samples in Dataset:", f"{total_count:,}")
+    st.sidebar.metric("Number of Samples After Pruning:", f"{(total_count - pruned_samples):,}")
 
-    # place logos in sidebar
-    st.sidebar.markdown('---')
+    st.sidebar.markdown("---")
     place_logos()
 
-# metadata ancestry callback for session state
 def meta_ancestry_callback():
-    st.session_state['old_meta_ancestry_choice'] = st.session_state['meta_ancestry_choice']
-    st.session_state['meta_ancestry_choice'] = st.session_state['new_meta_ancestry_choice']
+    """
+    Update session state upon changing the meta ancestry selection.
+    """
+    st.session_state["old_meta_ancestry_choice"] = st.session_state["meta_ancestry_choice"]
+    st.session_state["meta_ancestry_choice"] = st.session_state["new_meta_ancestry_choice"]
 
-# metadata ancestry select
 def meta_ancestry_select():
-    st.markdown('### **Choose an ancestry!**')
-    master_key = st.session_state['master_key']
+    """
+    Widget for selecting meta ancestry to filter the master key.
+    """
+    st.markdown("### **Choose an ancestry!**")
+    master_key = st.session_state["master_key"]
+    meta_ancestry_options = ["All"] + list(master_key["label"].dropna().unique())
 
-    # set options
-    meta_ancestry_options = ['All'] + [label for label in master_key['label'].dropna().unique()]
+    if "meta_ancestry_choice" not in st.session_state:
+        st.session_state["meta_ancestry_choice"] = meta_ancestry_options[0]
 
-    # set default
-    if 'meta_ancestry_choice' not in st.session_state:
-        st.session_state['meta_ancestry_choice'] = meta_ancestry_options[0]
+    if st.session_state["meta_ancestry_choice"] not in meta_ancestry_options:
+        st.error(
+            f"No samples with {st.session_state['meta_ancestry_choice']} ancestry in "
+            f"{st.session_state['cohort_choice']}. Displaying all ancestries instead!"
+        )
+        st.session_state["meta_ancestry_choice"] = meta_ancestry_options[0]
 
-    # error message when ancestry not available in selected cohort
-    if st.session_state['meta_ancestry_choice'] not in meta_ancestry_options:
-        st.error(f"No samples with {st.session_state['meta_ancestry_choice']} ancestry in {st.session_state['cohort_choice']}. \
-                 Displaying all ancestries instead!")
-        st.session_state['meta_ancestry_choice'] = meta_ancestry_options[0]
+    if "old_meta_ancestry_choice" not in st.session_state:
+        st.session_state["old_meta_ancestry_choice"] = ""
 
-    if 'old_meta_ancestry_choice' not in st.session_state:
-        st.session_state['old_chr_choice'] = ""
-    
-    # dynamic change of ancestry with selector
-    st.session_state['meta_ancestry_choice'] = st.selectbox(label='Ancestry Selection', label_visibility = 'collapsed', options=meta_ancestry_options, index=meta_ancestry_options.index(st.session_state['meta_ancestry_choice']), key='new_meta_ancestry_choice', on_change=meta_ancestry_callback)
+    st.session_state["meta_ancestry_choice"] = st.selectbox(
+        label="Ancestry Selection",
+        label_visibility="collapsed",
+        options=meta_ancestry_options,
+        index=meta_ancestry_options.index(st.session_state["meta_ancestry_choice"]),
+        key="new_meta_ancestry_choice",
+        on_change=meta_ancestry_callback
+    )
 
-# admixture ancestry callback for session state
 def admix_ancestry_callback():
-    st.session_state['old_admix_ancestry_choice'] = st.session_state['admix_ancestry_choice']
-    st.session_state['admix_ancestry_choice'] = st.session_state['new_admix_ancestry_choice']
+    """
+    Update session state upon changing the admixture ancestry selection.
+    """
+    st.session_state["old_admix_ancestry_choice"] = st.session_state["admix_ancestry_choice"]
+    st.session_state["admix_ancestry_choice"] = st.session_state["new_admix_ancestry_choice"]
 
-# admixture ancestry select
 def admix_ancestry_select():
-    st.markdown('### **Choose an ancestry!**')
-    master_key = st.session_state['master_key']
+    """
+    Widget for selecting admixture ancestry to filter the master key.
+    """
+    st.markdown("### **Choose an ancestry!**")
+    master_key = st.session_state["master_key"]
+    admix_ancestry_options = ["All"] + list(master_key["label"].dropna().unique())
 
-    # set options
-    admix_ancestry_options = ['All'] + [label for label in master_key['label'].dropna().unique()]
+    if "admix_ancestry_choice" not in st.session_state:
+        st.session_state["admix_ancestry_choice"] = admix_ancestry_options[0]
+    if "old_admix_ancestry_choice" not in st.session_state:
+        st.session_state["old_admix_ancestry_choice"] = ""
 
-    # set default
-    if 'admix_ancestry_choice' not in st.session_state:
-        st.session_state['admix_ancestry_choice'] = admix_ancestry_options[0]
-    if 'old_admix_ancestry_choice' not in st.session_state:
-        st.session_state['old_chr_choice'] = ""
-    
-    # dynamic change of ancestry with selector
-    st.session_state['admix_ancestry_choice'] = st.selectbox(label='Ancestry Selection', label_visibility = 'collapsed', options=admix_ancestry_options, index=admix_ancestry_options.index(st.session_state['admix_ancestry_choice']), key='new_admix_ancestry_choice', on_change=admix_ancestry_callback)
+    st.session_state["admix_ancestry_choice"] = st.selectbox(
+        label="Ancestry Selection",
+        label_visibility="collapsed",
+        options=admix_ancestry_options,
+        index=admix_ancestry_options.index(st.session_state["admix_ancestry_choice"]),
+        key="new_admix_ancestry_choice",
+        on_change=admix_ancestry_callback
+    )
 
-# snp metrics chromosome callback for session state
 def chr_callback():
-    st.session_state['old_chr_choice'] = st.session_state['chr_choice']
-    st.session_state['chr_choice'] = st.session_state['new_chr_choice']
+    """
+    Update session state upon changing the chromosome selection.
+    """
+    st.session_state["old_chr_choice"] = st.session_state["chr_choice"]
+    st.session_state["chr_choice"] = st.session_state["new_chr_choice"]
 
-# snp metrics ancestry callback for session state
 def ancestry_callback():
-    st.session_state['old_ancestry_choice'] = st.session_state['ancestry_choice']
-    st.session_state['ancestry_choice'] = st.session_state['new_ancestry_choice']
+    """
+    Update session state upon changing the ancestry selection.
+    """
+    st.session_state["old_ancestry_choice"] = st.session_state["ancestry_choice"]
+    st.session_state["ancestry_choice"] = st.session_state["new_ancestry_choice"]
 
-# snp metrics chromosome/ancestry selector
 def chr_ancestry_select():
-    st.sidebar.markdown('### **Choose a chromosome!**', unsafe_allow_html=True)
+    """
+    Sidebar widgets for selecting chromosome and ancestry.
+    """
+    st.sidebar.markdown("### **Choose a chromosome!**", unsafe_allow_html=True)
+    chr_options = list(range(1, 23))
 
-    # set chromosome options
-    chr_options=[i for i in range(1,23)]
+    if "chr_choice" not in st.session_state:
+        st.session_state["chr_choice"] = chr_options[0]
+    if "old_chr_choice" not in st.session_state:
+        st.session_state["old_chr_choice"] = ""
 
-    # set default chromosome
-    if 'chr_choice' not in st.session_state:
-        st.session_state['chr_choice'] = chr_options[0]
-    if 'old_chr_choice' not in st.session_state:
-        st.session_state['old_chr_choice'] = ""
+    st.session_state["chr_choice"] = st.sidebar.selectbox(
+        label="Chromosome Selection",
+        label_visibility="collapsed",
+        options=chr_options,
+        index=chr_options.index(st.session_state["chr_choice"]),
+        key="new_chr_choice",
+        on_change=chr_callback
+    )
 
-    # dynamic change of chromosome with selector
-    st.session_state['chr_choice'] = st.sidebar.selectbox(label = 'Chromosome Selection', label_visibility = 'collapsed', options=chr_options, index=chr_options.index(st.session_state['chr_choice']), key='new_chr_choice', on_change=chr_callback)
+    st.sidebar.markdown("### **Choose an Ancestry!**", unsafe_allow_html=True)
+    ancestry_options = config.ANCESTRY_OPTIONS
 
-    st.sidebar.markdown('### **Choose an Ancestry!**', unsafe_allow_html=True)
+    if "ancestry_choice" not in st.session_state:
+        st.session_state["ancestry_choice"] = ancestry_options[0]
+    if "old_ancestry_choice" not in st.session_state:
+        st.session_state["old_ancestry_choice"] = ""
 
-    # set ancestry options
-    ancestry_options=['AAC','AFR','AJ','AMR','CAH','CAS','EAS','EUR','FIN','MDE','SAS']
+    st.session_state["ancestry_choice"] = st.sidebar.selectbox(
+        label="Ancestry Selection",
+        label_visibility="collapsed",
+        options=ancestry_options,
+        index=ancestry_options.index(st.session_state["ancestry_choice"]),
+        key="new_ancestry_choice",
+        on_change=ancestry_callback
+    )
 
-    # set default ancestry
-    if 'ancestry_choice' not in st.session_state:
-        st.session_state['ancestry_choice'] = ancestry_options[0]
-    if 'old_ancestry_choice' not in st.session_state:
-        st.session_state['old_ancestry_choice'] = ""
-
-    # dynamic change of ancestry with selector
-    st.session_state['ancestry_choice'] = st.sidebar.selectbox(label = 'Ancestry Selection', label_visibility = 'collapsed', options=ancestry_options, index=ancestry_options.index(st.session_state['ancestry_choice']), key='new_ancestry_choice', on_change=ancestry_callback)
-
-    # Place logos in sidebar
-    st.sidebar.markdown('---')
+    st.sidebar.markdown("---")
     place_logos()
 
-# rare variant cohort callback for session state
 def rv_cohort_callback():
-    st.session_state['old_rv_cohort_choice'] = st.session_state['rv_cohort_choice']
-    st.session_state['rv_cohort_choice'] = st.session_state['new_rv_cohort_choice']
+    """
+    Update session state upon changing the rare-variant cohort selection.
+    """
+    st.session_state["old_rv_cohort_choice"] = st.session_state["rv_cohort_choice"]
+    st.session_state["rv_cohort_choice"] = st.session_state["new_rv_cohort_choice"]
 
-# rare variant method callback for session state
 def method_callback():
-    st.session_state['old_method_choice'] = st.session_state['method_choice']
-    st.session_state['method_choice'] = st.session_state['new_method_choice']
+    """
+    Update session state upon changing the method selection.
+    """
+    st.session_state["old_method_choice"] = st.session_state["method_choice"]
+    st.session_state["method_choice"] = st.session_state["new_method_choice"]
 
-# rare variant gene callback for session state
 def rv_gene_callback():
-    st.session_state['old_rv_gene_choice'] = st.session_state['rv_gene_choice']
-    st.session_state['rv_gene_choice'] = st.session_state['new_rv_gene_choice']
+    """
+    Update session state upon changing the gene selection.
+    """
+    st.session_state["old_rv_gene_choice"] = st.session_state["rv_gene_choice"]
+    st.session_state["rv_gene_choice"] = st.session_state["new_rv_gene_choice"]
 
-# rare variant selector
 def rv_select(rv_data):
-    st.sidebar.markdown('### **Choose a cohort!**', unsafe_allow_html=True)
+    """
+    Sidebar widgets for selecting rare-variant parameters:
+    cohort, methods, and gene.
+    """
+    st.sidebar.markdown("### **Choose a cohort!**", unsafe_allow_html=True)
+    rv_cohort_options = list(rv_data["Study code"].unique())
 
-    # set cohort options
-    rv_cohort_options = [i for i in rv_data['Study code'].unique()]
+    if "rv_cohort_choice" not in st.session_state:
+        st.session_state["rv_cohort_choice"] = None
+    if "old_rv_cohort_choice" not in st.session_state:
+        st.session_state["old_rv_cohort_choice"] = ""
 
-    # set default cohort
-    if 'rv_cohort_choice' not in st.session_state:
-        st.session_state['rv_cohort_choice'] = None
-    if 'old_rv_cohort_choice' not in st.session_state:
-        st.session_state['old_rv_cohort_choice'] = ""
+    st.session_state["rv_cohort_choice"] = st.sidebar.multiselect(
+        label="Cohort Selection",
+        label_visibility="collapsed",
+        options=rv_cohort_options,
+        default=st.session_state["rv_cohort_choice"],
+        key="new_rv_cohort_choice",
+        on_change=rv_cohort_callback
+    )
 
-    # dynamic change of cohort with selector
-    st.session_state['rv_cohort_choice'] = st.sidebar.multiselect(label = 'Cohort Selection', label_visibility = 'collapsed', options=rv_cohort_options, default=st.session_state['rv_cohort_choice'], key='new_rv_cohort_choice', on_change=rv_cohort_callback)
+    st.sidebar.markdown("### **Choose a discovery method!**", unsafe_allow_html=True)
+    method_options = list(rv_data["Methods"].unique())
 
+    if "method_choice" not in st.session_state:
+        st.session_state["method_choice"] = None
+    if "old_method_choice" not in st.session_state:
+        st.session_state["old_method_choice"] = ""
 
-    st.sidebar.markdown('### **Choose a discovery method!**', unsafe_allow_html=True)
+    st.session_state["method_choice"] = st.sidebar.multiselect(
+        label="Method Selection",
+        label_visibility="collapsed",
+        options=method_options,
+        default=st.session_state["method_choice"],
+        key="new_method_choice",
+        on_change=method_callback
+    )
 
-    # set methods options
-    method_options = [i for i in rv_data['Methods'].unique()]
+    st.sidebar.markdown("### **Choose a gene!**", unsafe_allow_html=True)
+    rv_gene_options = list(rv_data["Gene"].unique())
 
-    # set default methods
-    if 'method_choice' not in st.session_state:
-        st.session_state['method_choice'] = None
-    if 'old_method_choice' not in st.session_state:
-        st.session_state['old_method_choice'] = ""
+    if "rv_gene_choice" not in st.session_state:
+        st.session_state["rv_gene_choice"] = None
+    if "old_rv_gene_choice" not in st.session_state:
+        st.session_state["old_rv_gene_choice"] = ""
 
-    # dynamic change of methods with selector
-    st.session_state['method_choice'] = st.sidebar.multiselect(label = 'Method Selection', label_visibility = 'collapsed', options=method_options, default=st.session_state['method_choice'], key='new_method_choice', on_change=method_callback)
+    st.session_state["rv_gene_choice"] = st.sidebar.multiselect(
+        label="Gene Selection",
+        label_visibility="collapsed",
+        options=rv_gene_options,
+        default=st.session_state["rv_gene_choice"],
+        key="new_rv_gene_choice",
+        on_change=rv_gene_callback
+    )
 
-
-    st.sidebar.markdown('### **Choose a gene!**', unsafe_allow_html=True)
-
-    # set gene options
-    rv_gene_options = [i for i in rv_data['Gene'].unique()]
-
-    # set default gene
-    if 'rv_gene_choice' not in st.session_state:
-        st.session_state['rv_gene_choice'] = None
-    if 'old_rv_gene_choice' not in st.session_state:
-        st.session_state['old_rv_gene_choice'] = ""
-
-    # dynamic change of gene with selector
-    st.session_state['rv_gene_choice'] = st.sidebar.multiselect(label = 'Gene Selection', label_visibility = 'collapsed', options=rv_gene_options, default=st.session_state['rv_gene_choice'], key='new_rv_gene_choice', on_change=rv_gene_callback)
-
-    # Place logos in sidebar
-    st.sidebar.markdown('---')
+    st.sidebar.markdown("---")
     place_logos()

@@ -10,7 +10,9 @@ from utils.quality_control_utils import (
     prepare_variant_data,
     create_qc_plots
 )
+from utils.config import AppConfig
 
+config = AppConfig()
 
 def main():
     
@@ -57,7 +59,7 @@ def main():
 
     st.header('QC Step 1: Sample-Level Filtering')
     with st.expander("Description", expanded=False):
-        st.markdown('Sample-level pruning process description here.')
+        st.markdown(config.DESCRIPTIONS['qc'])
 
     left_col1, right_col1 = st.columns(2)
 
@@ -72,7 +74,7 @@ def main():
 
     st.header('QC Step 2: Variant-Level Filtering')
     with st.expander("Description", expanded=False):
-        st.markdown('Variant-level pruning process description here.')
+        st.markdown(config.DESCRIPTIONS['variant'])
 
     st.plotly_chart(variant_plot)
 

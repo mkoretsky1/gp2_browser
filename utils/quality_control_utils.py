@@ -8,16 +8,11 @@ from utils.hold_data import (
     cohort_select
 )
 
-
 def load_qc_data():
-    """Load necessary data from Google Cloud bucket."""
     gp2_data_bucket = get_gcloud_bucket('gp2tier2')
-
-    # Load QC metrics
     qc_metrics_path = f"{st.session_state['release_bucket']}/meta_data/qc_metrics/qc_metrics.csv"
     df_qc = blob_as_csv(gp2_data_bucket, qc_metrics_path, sep=',')
 
-    # Load master key
     release_choice = st.session_state['release_choice']
     master_key_path = (
         f"{st.session_state['release_bucket']}/clinical_data/master_key_release7_final.csv"
@@ -31,7 +26,6 @@ def load_qc_data():
     return master_key, df_qc
 
 def prepare_funnel_data(master_key):
-    """Prepare data for funnel chart showing sample pruning steps."""
     pre_QC_total = master_key['GP2sampleID'].count()
     funnel_df = pd.DataFrame(columns=['remaining_samples', 'step'])
     funnel_df.loc[0] = {'remaining_samples': pre_QC_total, 'step': 'pre_QC'}
@@ -40,8 +34,14 @@ def prepare_funnel_data(master_key):
     remaining_samples = pre_QC_total
 
     ordered_prune = [
-        'insufficient_ancestry_sample_n', 'phenotype_not_reported', 'missing_idat',
-        'missing_bed', 'callrate_prune', 'sex_prune', 'het_prune', 'duplicated_prune'
+        'insufficient_ancestry_sample_n', 
+        'phenotype_not_reported', 
+        'missing_idat',
+        'missing_bed', 
+        'callrate_prune', 
+        'sex_prune', 
+        'het_prune', 
+        'duplicated_prune'
     ]
 
     for prunes in ordered_prune:
@@ -67,7 +67,6 @@ def prepare_funnel_data(master_key):
     return funnel_df
 
 def prepare_relatedness_data(master_key, ancestry_dict, ancestry_index):
-    """Prepare data for relatedness per ancestry plot."""
     df_3 = master_key[(master_key['related'] == 1) | (master_key['pruned_reason'] == 'duplicated_prune')]
     df_3 = df_3[['label', 'pruned']]
 
@@ -89,14 +88,12 @@ def prepare_relatedness_data(master_key, ancestry_dict, ancestry_index):
     return df_4
 
 def prepare_variant_data(df_qc):
-    """Prepare data for variant-level pruning plot."""
     metrics = [
         'geno_removed_count', 'mis_removed_count', 
         'haplotype_removed_count', 'hwe_removed_count', 
         'total_removed_count'
     ]
 
-    # Create individual DataFrames for each metric and rename columns to avoid conflicts
     dataframes = []
     for metric in metrics:
         df_metric = df_qc.query(f"metric == '{metric}'").reset_index(drop=True)
@@ -107,7 +104,6 @@ def prepare_variant_data(df_qc):
         df_metric.drop(columns=['metric_type'], inplace=True)
         dataframes.append(df_metric)
 
-    # Merge all DataFrames sequentially, ensuring unique suffixes
     df_merged = dataframes[0]
     for df in dataframes[1:]:
         df_merged = pd.merge(
@@ -117,36 +113,71 @@ def prepare_variant_data(df_qc):
             suffixes=('', '_duplicate')
         )
 
-    # Remove any duplicate columns generated during the merge
     df_merged = df_merged.loc[:, ~df_merged.columns.duplicated()]
 
     df_merged.set_index('ancestry', inplace=True)
     return df_merged
 
 def create_qc_plots(funnel_df, relatedness_df, variant_df):
-    """Create plots for sample and variant pruning."""
-    # Funnel plot
     funnel_plot = go.Figure(go.Funnelarea(
         text=[f'<b>{i}</b>' for i in funnel_df['step_name']],
         values=funnel_df['remaining_samples'],
-        marker={"colors": ["#999999", "#E69F00", "#56B4E9", "#009E73", "#AA4499", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"]},
+        marker={
+            "colors": [
+                "#999999", 
+                "#E69F00", 
+                "#56B4E9", 
+                "#009E73", 
+                "#AA4499", 
+                "#F0E442", 
+                "#0072B2", 
+                "#D55E00", 
+                "#CC79A7"
+            ]
+        },
         opacity=1.0, textinfo='text',
         customdata=funnel_df['remaining_samples'],
         hovertemplate='Remaining Samples:<br>%{customdata:.f}<extra></extra>'
     ))
+
     funnel_plot.update_layout(showlegend=False, margin=dict(l=0, r=300, t=10, b=0))
 
-    # Relatedness plot
-    relatedness_plot = go.Figure(data=[
-        go.Bar(y=relatedness_df.label, x=relatedness_df['related_count'], orientation='h', name="Related", marker_color="#0072B2"),
-        go.Bar(y=relatedness_df.label, x=-relatedness_df['duplicated_count'], orientation='h', name="Duplicated", marker_color="#D55E00")
-    ])
-    relatedness_plot.update_layout(barmode='stack', height=500, width=750, margin=dict(l=0, r=200, t=10, b=60))
+    relatedness_plot = go.Figure(
+        data=[
+            go.Bar(
+                y=relatedness_df.label, 
+                x=relatedness_df['related_count'], 
+                orientation='h', 
+                name="Related", 
+                marker_color="#0072B2"
+            ),
+            go.Bar(
+                y=relatedness_df.label, 
+                x=-relatedness_df['duplicated_count'], 
+                orientation='h', 
+                name="Duplicated", 
+                marker_color="#D55E00"
+            )
+        ]
+    )
 
-    # Variant pruning plot
+    relatedness_plot.update_layout(
+        barmode='stack', 
+        height=500, 
+        width=750, 
+        margin=dict(l=0, r=200, t=10, b=60)
+    )
+
     variant_plot = go.Figure()
     for col, color in zip(variant_df.columns, ["#0072B2", "#882255", "#44AA99", "#D55E00"]):
-        variant_plot.add_trace(go.Bar(x=variant_df.index, y=variant_df[col], name=col.replace('_count', ' Count'), marker_color=color))
+        variant_plot.add_trace(
+            go.Bar(
+                x=variant_df.index, 
+                y=variant_df[col], 
+                name=col.replace('_count', ' Count'), 
+                marker_color=color
+            )
+        )
     variant_plot.update_layout(
         barmode='stack', xaxis=dict(title='Ancestry', tickfont_size=14),
         yaxis=dict(title='Count', titlefont_size=16, tickfont_size=14),

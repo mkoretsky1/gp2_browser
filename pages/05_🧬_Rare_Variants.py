@@ -1,45 +1,32 @@
-import os
-import sys
-import subprocess
-import datetime
-import numpy as np
 import pandas as pd
 import streamlit as st
 from utils.hold_data import (
-    blob_as_csv, 
-    get_gcloud_bucket, 
     config_page, 
     rv_select
 )
-config_page('GP2 Rare Variant Browser')
+from utils.rare_variants_utils import (
+    load_rare_variant_data,
+    filter_rare_variant_data
+)
 
-# release_select()
+def main():
+    """Main function for the GP2 Rare Variant Browser."""
+    config_page("GP2 Rare Variant Browser")
+    st.title("GP2 Rare Variant Browser")
 
-# Pull data from different Google Cloud folders
-gp2_sample_bucket_name = 'gt_app_utils'
-gp2_sample_bucket = get_gcloud_bucket(gp2_sample_bucket_name)
+    # Load data
+    bucket_name = "gt_app_utils"
+    file_path = "gp2_RV_browser_input.csv"
+    rv_data = load_rare_variant_data(bucket_name, file_path)
 
-# Gets rare variant data
-rv_data = blob_as_csv(gp2_sample_bucket, f'gp2_RV_browser_input.csv', sep=',')
-rv_select(rv_data)
+    # User selections
+    rv_select(rv_data)
 
-st.title('GP2 Rare Variant Browser')
+    # Filter data based on selections
+    rv_data_filtered = filter_rare_variant_data(rv_data)
 
-# Filter df based on the user selection 
-if len(st.session_state['rv_cohort_choice'])>0:      
-    rv_data_selected = rv_data[rv_data['Study code'].isin(st.session_state['rv_cohort_choice'])].reset_index(drop=True)
-else:
-    rv_data_selected = rv_data
+    # Display the filtered data
+    st.dataframe(rv_data_filtered, hide_index=True, use_container_width=True)
 
-if len(st.session_state['method_choice'])>0: 
-    rv_data_selected = rv_data_selected[rv_data_selected['Methods'].isin(st.session_state['method_choice'])].reset_index(drop=True)
-else:
-    rv_data_selected = rv_data_selected
-
-if len(st.session_state['rv_gene_choice'])>0: 
-    rv_data_selected = rv_data_selected[rv_data_selected['Gene'].isin(st.session_state['rv_gene_choice'])].reset_index(drop=True)
-else:
-    rv_data_selected = rv_data_selected
-
-st.dataframe(rv_data_selected, hide_index=True, use_container_width=True)
-
+if __name__ == "__main__":
+    main()
