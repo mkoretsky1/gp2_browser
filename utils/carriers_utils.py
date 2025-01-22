@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from typing import List, Dict, Optional
-
 from utils.hold_data import (
     release_select,
     config_page

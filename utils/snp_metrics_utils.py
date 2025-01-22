@@ -3,10 +3,8 @@ import numpy as np
 import streamlit as st
 import plotly.express as px
 from utils.hold_data import (
-    blob_as_csv, 
-    config_page
+    blob_as_csv
 )
-
 
 def load_metrics_data(bucket, ancestry_choice, chr_choice):
     metrics_blob_name = f"gp2_snp_metrics/{ancestry_choice}/chr{chr_choice}_metrics.csv"
