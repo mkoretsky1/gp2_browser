@@ -163,7 +163,7 @@ class AppConfig(BaseSettings):
     }
     </style>
 
-    ## _GenoTools Preprint Out Now!_
+    ## _GenoTools Paper Out Now!_
     For a more in-depth description of the methods used to process the GP2 releases, please see the [GenoTools](https://doi.org/10.1093/g3journal/jkae268) paper published in G3
 
     ## _Quality Control_
