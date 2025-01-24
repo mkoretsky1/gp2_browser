@@ -5,3 +5,6 @@ __pycache__/*
 .DS_Store
 .venv
 .secrets
+visualization/__pycache__/*
+utils/__pycache__/*
+data
