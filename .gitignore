@@ -8,3 +8,6 @@ __pycache__/*
 visualization/__pycache__/*
 utils/__pycache__/*
 data
+.secrets/
+.venv/
+data/
