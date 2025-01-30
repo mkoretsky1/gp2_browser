@@ -8,3 +8,4 @@ protobuf==5.29.3
 pydantic_settings==2.7.1
 seaborn==0.13.2
 streamlit==1.41.1
+google-cloud-storage
