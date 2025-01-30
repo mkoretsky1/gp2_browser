@@ -97,7 +97,7 @@ def release_callback():
 
 def release_select():
     st.sidebar.markdown("### **Choose a release!**")
-    release_options = [6, 7, 8]
+    release_options = [8, 7, 6]
 
     if "release_choice" not in st.session_state:
         st.session_state["release_choice"] = release_options[0]
