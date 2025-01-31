@@ -82,14 +82,14 @@ def place_logos():
         card_removebg = card_removebg_blob.download_as_bytes()
         gp2_removebg_blob = frontend_bucket.get_blob("gp2_2-removebg.png")
         gp2_removebg = gp2_removebg_blob.download_as_bytes()
-        redlat_blob = frontend_bucket.get_blob("Redlat.png")
-        redlat = redlat_blob.download_as_bytes()
+        # redlat_blob = frontend_bucket.get_blob("Redlat.png")
+        # redlat = redlat_blob.download_as_bytes()
         st.session_state["card_removebg"] = card_removebg
         st.session_state["gp2_removebg"] = gp2_removebg
-        st.session_state["redlat"] = redlat
+        # st.session_state["redlat"] = redlat
         sidebar1.image(card_removebg, use_container_width=True)
         sidebar2.image(gp2_removebg, use_container_width=True)
-        st.sidebar.image(redlat, use_container_width=True)
+        # st.sidebar.image(redlat, use_container_width=True)
 
 def release_callback():
     st.session_state["old_release_choice"] = st.session_state["release_choice"]
