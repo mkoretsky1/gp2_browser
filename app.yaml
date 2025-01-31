@@ -1,4 +1,4 @@
-service: gp2-cohort-browser
+service: carriers-browser-test
 runtime: custom
 env: flex
 resources:
@@ -6,4 +6,4 @@ resources:
  memory_gb: 12
  disk_size_gb: 12
 network:
-  session_affinity:true
+  session_affinity: true

@@ -8,27 +8,37 @@ from utils.hold_data import (
     get_gcloud_bucket,
     cohort_select,
     meta_ancestry_select,
-    config_page
+    config_page,
+    release_select
 )
 
 from utils.carriers_utils import (
     CarriersConfig,
     get_master_key_path,
-    CarrierDataProcessor,
-
+    CarrierDataProcessor
 )
+
+from utils.config import AppConfig
+
+config = AppConfig()
 
 def main():
     config_page("GP2 Rare Variant Browser")
-    
+    release_select()
     # iunitialize buckets
     gp2_data_bucket = get_gcloud_bucket(CarriersConfig.GP2_DATA_BUCKET_NAME)
     carriers_bucket = get_gcloud_bucket(CarriersConfig.CARRIERS_BUCKET_NAME)
     
-    master_key_path = get_master_key_path(
-        st.session_state["release_bucket"],
-        st.session_state['release_choice']
-    )
+    if st.session_state['release_choice'] == 8:
+        master_key_path = (
+            f"{config.RELEASE_BUCKET_MAP[st.session_state['release_choice']]}/clinical_data/"
+            "master_key_release7_final.csv"
+        )
+    else:
+        master_key_path = (
+            f"{config.RELEASE_BUCKET_MAP[st.session_state['release_choice']]}/clinical_data/"
+            f"master_key_release{st.session_state['release_choice']}_final.csv"
+        )
     
     master_key = blob_as_csv(gp2_data_bucket, master_key_path, sep=',')
     cohort_select(master_key)
