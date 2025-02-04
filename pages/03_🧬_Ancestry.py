@@ -5,7 +5,8 @@ import streamlit as st
 from utils.hold_data import (
     blob_as_csv,
     get_gcloud_bucket,
-    cohort_select,
+    get_master_key,
+    filter_by_cohort,
     release_select,
     config_page
 )
@@ -26,25 +27,18 @@ def main():
     config_page('Ancestry')
     release_select()
 
-    gp2_data_bucket = get_gcloud_bucket('gp2tier2')
+    ### old code before path refactor
+    gp2_data_bucket = get_gcloud_bucket('gt_app_utils') # used to be gp2tier2
+    # master_key = get_master_key(gp2_data_bucket)
+    # cohort_select(master_key)
 
-    if st.session_state['release_choice'] == 8:
-        master_key_path = (
-            f"{st.session_state['release_bucket']}/clinical_data/"
-            "master_key_release7_final.csv"
-        )
-    else:
-        master_key_path = (
-            f"{st.session_state['release_bucket']}/clinical_data/"
-            f"master_key_release{st.session_state['release_choice']}_final.csv"
-        )
+    # pca_folder = f"{st.session_state['release_bucket']}/meta_data/qc_metrics"
+    # master_key = st.session_state['master_key']
+    # master_key = master_key[master_key['pruned'] == 0]
 
-    master_key = blob_as_csv(gp2_data_bucket, master_key_path, sep=',')
-    cohort_select(master_key)
-
-    pca_folder = f"{st.session_state['release_bucket']}/meta_data/qc_metrics"
-    master_key = st.session_state['master_key']
-    master_key = master_key[master_key['pruned'] == 0]
+    master_key = get_master_key(gp2_data_bucket)
+    master_key = filter_by_cohort(master_key)
+    pca_folder = f"qc_metrics/release{st.session_state['release_choice']}"
 
     tab_pca, tab_pred_stats, tab_pie, tab_admix, tab_methods = st.tabs([
         "Ancestry Prediction",

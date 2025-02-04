@@ -100,12 +100,10 @@ def render_tab_pca(pca_folder, gp2_data_bucket, master_key):
     proj_pca = proj_pca.drop(columns=['label'], axis=1)
 
     proj_pca_cohort = proj_pca.merge(
-        master_key[['GP2sampleID', 'label', 'study']],
+        master_key[['IID', 'label', 'study']],
         how='inner',
-        left_on=['IID'],
-        right_on=['GP2sampleID']
+        on=['IID']
     )
-    proj_pca_cohort = proj_pca_cohort.drop(columns=['GP2sampleID'], axis=1)
     proj_pca_cohort['plot_label'] = 'Predicted'
     ref_pca['plot_label'] = ref_pca['label']
 

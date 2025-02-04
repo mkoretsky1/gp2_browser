@@ -5,28 +5,22 @@ import plotly.graph_objects as go
 from utils.hold_data import (
     blob_as_csv, 
     get_gcloud_bucket, 
+    get_master_key,
     cohort_select
 )
 
 def load_qc_data():
-    gp2_data_bucket = get_gcloud_bucket('gp2tier2')
-    qc_metrics_path = f"{st.session_state['release_bucket']}/meta_data/qc_metrics/qc_metrics.csv"
-    df_qc = blob_as_csv(gp2_data_bucket, qc_metrics_path, sep=',')
-
-    release_choice = st.session_state['release_choice']
-    master_key_path = (
-        f"{st.session_state['release_bucket']}/clinical_data/master_key_release7_final.csv"
-        if release_choice == 8 else
-        f"{st.session_state['release_bucket']}/clinical_data/master_key_release{release_choice}_final.csv"
-    )
-    master_key = blob_as_csv(gp2_data_bucket, master_key_path, sep=',')
-
+    gp2_data_bucket = get_gcloud_bucket('gt_app_utils')
+    master_key = get_master_key(gp2_data_bucket)
     cohort_select(master_key)
+
+    qc_metrics_path = f"qc_metrics/release{st.session_state['release_choice']}/qc_metrics.csv"
+    df_qc = blob_as_csv(gp2_data_bucket, qc_metrics_path, sep=',')
 
     return master_key, df_qc
 
 def prepare_funnel_data(master_key):
-    pre_QC_total = master_key['GP2sampleID'].count()
+    pre_QC_total = master_key['IID'].count()
     funnel_df = pd.DataFrame(columns=['remaining_samples', 'step'])
     funnel_df.loc[0] = {'remaining_samples': pre_QC_total, 'step': 'pre_QC'}
 
@@ -67,15 +61,15 @@ def prepare_funnel_data(master_key):
     return funnel_df
 
 def prepare_relatedness_data(master_key, ancestry_dict, ancestry_index):
-    df_3 = master_key[(master_key['related'] == 1) | (master_key['pruned_reason'] == 'duplicated_prune')]
-    df_3 = df_3[['label', 'pruned']]
+    df_3 = master_key[(master_key['related'] == 1) | (master_key['pruned_reason'] == 'duplicated')]
+    df_3 = df_3[['label', 'pruned_reason', 'related']]
 
     df_4_dicts = []
     for label in ancestry_dict:
         ancestry_df_dict = {
             'ancestry': label,
-            'related_count': df_3[df_3['label'] == label][df_3['pruned'] == 0].shape[0],
-            'duplicated_count': df_3[df_3['label'] == label][df_3['pruned'] == 1].shape[0]
+            'related_count': df_3[df_3['label'] == label][df_3['related'] == 1].shape[0],
+            'duplicated_count': df_3[df_3['label'] == label][df_3['pruned_reason'].notnull()].shape[0]
         }
         df_4_dicts.append(ancestry_df_dict)
 

@@ -21,17 +21,17 @@ def get_gcloud_bucket(bucket_name):
 
 def get_master_key(bucket):
     release_choice = st.session_state["release_choice"]
-    base_path = f"{st.session_state['release_bucket']}/clinical_data"
-    if release_choice == 8:
-        master_key_path = f"{base_path}/master_key_release7_final.csv"
+    master_key_path = f"release_keys/nba_app_key.csv"
+    master_key = blob_as_csv(bucket, master_key_path, sep=",")
+    latest_rel = max(master_key.release)
+    if release_choice == latest_rel:
+        return master_key
     else:
-        master_key_path = f"{base_path}/master_key_release{release_choice}_final.csv"
-
-    return blob_as_csv(bucket, master_key_path, sep=",")
+        return master_key[master_key.release == release_choice]
 
 def filter_by_cohort(master_key):
     cohort_select(master_key)
-    master_key = master_key[master_key["pruned"] == 0]
+    master_key = master_key[master_key["pruned_reason"].isnull()]
     return master_key
 
 def filter_by_ancestry(master_key):
@@ -41,15 +41,8 @@ def filter_by_ancestry(master_key):
         master_key = master_key[master_key["label"] == meta_ancestry_choice]
     return master_key
 
-def rename_columns(master_key):
-    release_choice = st.session_state["release_choice"]
-    column_map = config.RELEASE_COLUMN_MAP.get(release_choice, {})
-    if column_map:
-        master_key.rename(columns=column_map, inplace=True)
-    return master_key
-
 def update_sex_labels(master_key):
-    master_key["Sex"].replace(config.SEX_MAP, inplace=True)
+    master_key["sex"].replace(config.SEX_MAP, inplace=True)
     return master_key
 
 def config_page(title):
@@ -97,7 +90,7 @@ def release_callback():
 
 def release_select():
     st.sidebar.markdown("### **Choose a release!**")
-    release_options = [8, 7, 6]
+    release_options = [9, 8]
 
     if "release_choice" not in st.session_state:
         st.session_state["release_choice"] = release_options[0]
@@ -112,8 +105,6 @@ def release_select():
         key="new_release_choice",
         on_change=release_callback
     )
-
-    st.session_state["release_bucket"] = config.RELEASE_BUCKET_MAP[st.session_state["release_choice"]]
 
 def cohort_callback():
     """
@@ -162,8 +153,9 @@ def cohort_select(master_key):
         master_key_cohort = master_key[master_key["study"] == st.session_state["cohort_choice"]]
         st.session_state["master_key"] = master_key_cohort
 
-    pruned_counts = st.session_state.master_key["pruned"].value_counts()
-    pruned_samples = pruned_counts[1] if 1 in pruned_counts else 0
+    # pruned_counts = st.session_state.master_key["pruned"].value_counts()
+    # pruned_samples = pruned_counts[1] if 1 in pruned_counts else 0
+    pruned_samples = len(st.session_state.master_key[st.session_state.master_key["pruned_reason"].notnull()])
     total_count = st.session_state["master_key"].shape[0]
 
     st.sidebar.metric(" ", st.session_state["cohort_choice"])

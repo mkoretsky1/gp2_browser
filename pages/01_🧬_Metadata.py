@@ -9,7 +9,6 @@ from utils.hold_data import (
     get_master_key,
     filter_by_cohort,
     filter_by_ancestry,
-    rename_columns,
     update_sex_labels
 )
 from utils.metadata_utils import plot_age_distribution, display_phenotype_counts
@@ -18,12 +17,11 @@ def main():
     config_page('Metadata')
     
     release_select()
-    gp2_data_bucket = get_gcloud_bucket('gp2tier2')
+    gp2_data_bucket = get_gcloud_bucket('gt_app_utils')
     
     master_key = get_master_key(gp2_data_bucket)
     master_key = filter_by_cohort(master_key)
     master_key = filter_by_ancestry(master_key)
-    master_key = rename_columns(master_key)
     master_key = update_sex_labels(master_key)
 
     st.session_state['master_key'] = master_key

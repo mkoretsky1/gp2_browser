@@ -9,35 +9,6 @@ class AppConfig(BaseSettings):
     GCP_PROJECT: str = "gp2-release-terra"
     FRONTEND_BUCKET_NAME: str = "gt_app_utils"
 
-    RELEASE_BUCKET_MAP: Dict[int, str] = {
-        1: "release1_29112021",
-        2: "release2_06052022",
-        3: "release3_31102022",
-        4: "release4_14022023",
-        5: "release5_11052023",
-        6: "release6_21122023",
-        7: "release7_30042024",
-        8: "release7_30042024",
-    }
-
-    RELEASE_COLUMN_MAP: Dict[int, Dict[str, str]] = {
-        6: {
-            "age": "Age",
-            "sex_for_qc": "Sex",
-            "gp2_phenotype": "Phenotype",
-        },
-        7: {
-            "age_at_sample_collection": "Age",
-            "biological_sex_for_qc": "Sex",
-            "baseline_GP2_phenotype_for_qc": "Phenotype",
-        },
-        8: {
-            "age_at_sample_collection": "Age",
-            "biological_sex_for_qc": "Sex",
-            "baseline_GP2_phenotype_for_qc": "Phenotype",
-        },
-    }
-
     SEX_MAP: Dict[int, str] = {
         1: "Male",
         2: "Female",
