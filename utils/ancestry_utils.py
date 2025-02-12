@@ -86,7 +86,7 @@ def plot_pie(df):
     st.plotly_chart(pie_chart)
 
 
-def render_tab_pca(pca_folder, gp2_data_bucket, master_key):
+def render_tab_pca(pca_folder, gp2_data_bucket):
     """
     Render the PCA tab in the Streamlit interface.
 
@@ -96,48 +96,41 @@ def render_tab_pca(pca_folder, gp2_data_bucket, master_key):
         master_key (pd.DataFrame): Master key dataframe.
     """
     ref_pca = blob_as_csv(gp2_data_bucket, f'{pca_folder}/reference_pcs.csv', sep=',')
-    proj_pca = blob_as_csv(gp2_data_bucket, f'{pca_folder}/projected_pcs.csv', sep=',')
-    proj_pca = proj_pca.drop(columns=['label'], axis=1)
+    proj_pca = blob_as_csv(gp2_data_bucket, f'{pca_folder}/release{st.session_state["release_choice"]}/projected_pcs.csv', sep=',')
+    proj_labels = blob_as_csv(gp2_data_bucket, f'{pca_folder}/release{st.session_state["release_choice"]}/ancestry_counts.csv', sep=',')
+    proj_samples = blob_as_csv(gp2_data_bucket, f'{pca_folder}/release{st.session_state["release_choice"]}/ancestry_labels.csv', sep=',')
 
-    proj_pca_cohort = proj_pca.merge(
-        master_key[['IID', 'label', 'study']],
-        how='inner',
-        on=['IID']
-    )
-    proj_pca_cohort['plot_label'] = 'Predicted'
-    ref_pca['plot_label'] = ref_pca['label']
+    proj_pca['plot_label'] = 'Predicted'
+    ref_pca.rename(columns={'label': 'plot_label'}, inplace = True)
+    proj_labels.rename(columns={'label': 'Predicted Ancestry', 'count': 'Counts'}, inplace = True)
+    proj_samples.rename(columns={'label': 'Predicted Ancestry'}, inplace = True)
 
-    total_pca = pd.concat([ref_pca, proj_pca_cohort], axis=0)
-    new_labels = proj_pca_cohort['label']
+    total_pca = pd.concat([ref_pca, proj_pca], axis=0)
+    proj_pca = proj_pca.merge(proj_samples, on = ['FID', 'IID'], how = 'inner')
 
     pca_col1, pca_col2 = st.columns([1.5, 3])
     st.markdown('---')
     col1, col2 = st.columns([1.5, 3])
-
-    combined = proj_pca_cohort[['IID', 'label']]
-    combined_labelled = combined.rename(columns={'label': 'Predicted Ancestry'})
-    hold_values = combined['label'].value_counts().rename_axis('Predicted Ancestry').reset_index(name='Counts')
 
     with pca_col1:
         st.markdown(f'### Reference Panel vs. {st.session_state["cohort_choice"]} PCA')
         with st.expander("Description"):
             st.write(config.DESCRIPTIONS['pca1'])
 
-        hold_values['Select'] = False
-        select_ancestry = st.data_editor(hold_values, hide_index=True, use_container_width=True)
+        proj_labels['Select'] = False
+        select_ancestry = st.data_editor(proj_labels, hide_index=True, use_container_width=True)
         selection_list = select_ancestry.loc[select_ancestry['Select'] == True]['Predicted Ancestry']
 
     with pca_col2:
         if not selection_list.empty:
-            selected_pca = proj_pca_cohort.copy()
+            selected_pca = proj_pca.copy()
+            selected_pca['label'] = selected_pca['Predicted Ancestry']
             selected_pca.drop(
                 selected_pca[~selected_pca['label'].isin(selection_list)].index,
                 inplace=True
             )
-            for items in selection_list:
-                selected_pca.replace({items: 'Predicted'}, inplace=True)
             total_pca_selected = pd.concat([ref_pca, selected_pca], axis=0)
-            plot_3d(total_pca_selected, 'label')
+            plot_3d(total_pca_selected, 'plot_label')
         else:
             plot_3d(total_pca, 'plot_label')
 
@@ -145,10 +138,10 @@ def render_tab_pca(pca_folder, gp2_data_bucket, master_key):
         st.markdown(f'### {st.session_state["cohort_choice"]} PCA')
         with st.expander("Description"):
             st.write(config.DESCRIPTIONS['pca2'])
-        st.dataframe(combined_labelled, hide_index=True, use_container_width=True)
+        st.dataframe(proj_samples[['IID', 'Predicted Ancestry']], hide_index=True, use_container_width=True)
 
     with col2:
-        plot_3d(proj_pca_cohort, 'label')
+        plot_3d(proj_pca, 'Predicted Ancestry')
 
 
 def plot_confusion_matrix(confusion_matrix):
@@ -191,7 +184,7 @@ def render_tab_pred_stats(pca_folder, gp2_data_bucket):
         gp2_data_bucket (google.cloud.storage.bucket.Bucket): GCloud bucket object.
     """
     st.markdown('## **Model Accuracy**')
-    confusion_matrix = blob_as_csv(gp2_data_bucket, f'{pca_folder}/confusion_matrix.csv', sep=',')
+    confusion_matrix = blob_as_csv(gp2_data_bucket, f'{pca_folder}/release{st.session_state["release_choice"]}/confusion_matrix.csv', sep=',')
 
     if 'label' in confusion_matrix.columns:
         confusion_matrix.set_index('label', inplace=True)
@@ -244,15 +237,16 @@ def render_tab_pie(pca_folder, gp2_data_bucket):
     ref_combo = pd.merge(df_ref_ancestry_counts, ref_counts, on='Ancestry Category')
     ref_combo.rename(columns={'Proportion': 'Ref Panel Proportion', 'Counts': 'Ref Panel Counts'}, inplace=True)
 
-    df_pred_ancestry_counts = st.session_state['master_key']['label'].value_counts(normalize=True).rename_axis('Ancestry Category').reset_index(name='Proportion')
-    pred_counts = st.session_state['master_key']['label'].value_counts().rename_axis('Ancestry Category').reset_index(name='Counts')
-    pred_combo = pd.merge(df_pred_ancestry_counts, pred_counts, on='Ancestry Category')
-    pred_combo.rename(columns={'Proportion': 'Predicted Proportion', 'Counts': 'Predicted Counts'}, inplace=True)
+    pred_combo = blob_as_csv(gp2_data_bucket, f'{pca_folder}/release{st.session_state["release_choice"]}/ancestry_counts.csv', sep=',')
+    total_count = pred_combo['count'].sum() # not the same as total master key count
+    pred_combo['Proportion'] = pred_combo['count'] / total_count
+    pred_combo.rename(columns = {'label': 'Ancestry Category', 'count': 'Predicted Counts'}, inplace = True)
 
     ref_combo = ref_combo[['Ancestry Category', 'Ref Panel Counts']]
     ref_combo_cah = pd.DataFrame([['CAH', 'NA']], columns=['Ancestry Category', 'Ref Panel Counts'])
     ref_combo = pd.concat([ref_combo, ref_combo_cah], axis=0)
     pie_table = pd.merge(ref_combo, pred_combo, on='Ancestry Category')
+    pie_table.sort_values(by = ['Predicted Counts'], ascending = False, inplace = True)
 
     with pie1:
         st.markdown('### **Reference Panel Ancestry**')
@@ -260,7 +254,7 @@ def render_tab_pie(pca_folder, gp2_data_bucket):
 
     with pie3:
         st.markdown(f'### {st.session_state["cohort_choice"]} Predicted Ancestry')
-        plot_pie(df_pred_ancestry_counts)
+        plot_pie(pred_combo)
 
     st.dataframe(
         pie_table[['Ancestry Category', 'Ref Panel Counts', 'Predicted Counts']],

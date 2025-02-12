@@ -14,7 +14,7 @@ from utils.hold_data import (
 from utils.metadata_utils import plot_age_distribution, display_phenotype_counts
 
 def main():
-    config_page('Metadata')
+    config_page('GP2 Release')
     
     release_select()
     gp2_data_bucket = get_gcloud_bucket('gt_app_utils')

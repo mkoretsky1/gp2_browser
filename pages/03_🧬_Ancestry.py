@@ -10,6 +10,7 @@ from utils.hold_data import (
     release_select,
     config_page
 )
+
 from utils.ancestry_utils import (
     render_tab_pca,
     render_tab_admix,
@@ -27,18 +28,12 @@ def main():
     config_page('Ancestry')
     release_select()
 
-    ### old code before path refactor
     gp2_data_bucket = get_gcloud_bucket('gt_app_utils') # used to be gp2tier2
-    # master_key = get_master_key(gp2_data_bucket)
-    # cohort_select(master_key)
 
-    # pca_folder = f"{st.session_state['release_bucket']}/meta_data/qc_metrics"
-    # master_key = st.session_state['master_key']
-    # master_key = master_key[master_key['pruned'] == 0]
-
+    # temp keeping sidebar
     master_key = get_master_key(gp2_data_bucket)
     master_key = filter_by_cohort(master_key)
-    pca_folder = f"qc_metrics/release{st.session_state['release_choice']}"
+    master_key = master_key[master_key['prune_reason'].isnull()]
 
     tab_pca, tab_pred_stats, tab_pie, tab_admix, tab_methods = st.tabs([
         "Ancestry Prediction",
@@ -49,13 +44,13 @@ def main():
     ])
 
     with tab_pca:
-        render_tab_pca(pca_folder, gp2_data_bucket, master_key)
+        render_tab_pca("qc_metrics", gp2_data_bucket)
 
     with tab_pred_stats:
-        render_tab_pred_stats(pca_folder, gp2_data_bucket)
+        render_tab_pred_stats("qc_metrics", gp2_data_bucket)
 
     with tab_pie:
-        render_tab_pie(pca_folder, gp2_data_bucket)
+        render_tab_pie("qc_metrics", gp2_data_bucket)
 
     with tab_admix:
         render_tab_admix()

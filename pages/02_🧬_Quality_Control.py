@@ -21,7 +21,7 @@ def main():
 
     master_key, df_qc = load_qc_data()
 
-    funnel_df = prepare_funnel_data(master_key)
+    funnel_df = prepare_funnel_data(master_key, df_qc)
     ancestry_dict = {
         'AFR': 'African', 
         'SAS': 'South Asian', 
@@ -61,7 +61,7 @@ def main():
     with st.expander("Description", expanded=False):
         st.markdown(config.DESCRIPTIONS['qc'])
 
-    left_col1, right_col1 = st.columns(2)
+    left_col1, right_col1 = st.columns([1.5,2])
 
     with left_col1:
         st.header("**All Sample Filtering Counts**")

@@ -31,7 +31,7 @@ def get_master_key(bucket):
 
 def filter_by_cohort(master_key):
     cohort_select(master_key)
-    master_key = master_key[master_key["pruned_reason"].isnull()]
+    master_key = master_key[master_key["prune_reason"].isnull()]
     return master_key
 
 def filter_by_ancestry(master_key):
@@ -90,7 +90,7 @@ def release_callback():
 
 def release_select():
     st.sidebar.markdown("### **Choose a release!**")
-    release_options = [9, 8]
+    release_options = [9] # can replace with master key reference
 
     if "release_choice" not in st.session_state:
         st.session_state["release_choice"] = release_options[0]
@@ -155,7 +155,7 @@ def cohort_select(master_key):
 
     # pruned_counts = st.session_state.master_key["pruned"].value_counts()
     # pruned_samples = pruned_counts[1] if 1 in pruned_counts else 0
-    pruned_samples = len(st.session_state.master_key[st.session_state.master_key["pruned_reason"].notnull()])
+    pruned_samples = len(st.session_state.master_key[st.session_state.master_key["prune_reason"].notnull()])
     total_count = st.session_state["master_key"].shape[0]
 
     st.sidebar.metric(" ", st.session_state["cohort_choice"])
