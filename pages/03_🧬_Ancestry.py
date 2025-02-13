@@ -3,10 +3,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from utils.hold_data import (
-    blob_as_csv,
     get_gcloud_bucket,
-    get_master_key,
-    filter_by_cohort,
     release_select,
     config_page
 )
@@ -29,11 +26,7 @@ def main():
     release_select()
 
     gp2_data_bucket = get_gcloud_bucket('gt_app_utils') # used to be gp2tier2
-
-    # temp keeping sidebar
-    master_key = get_master_key(gp2_data_bucket)
-    master_key = filter_by_cohort(master_key)
-    master_key = master_key[master_key['prune_reason'].isnull()]
+    plot_folder = f"qc_metrics/release{st.session_state['release_choice']}"
 
     tab_pca, tab_pred_stats, tab_pie, tab_admix, tab_methods = st.tabs([
         "Ancestry Prediction",
@@ -44,16 +37,16 @@ def main():
     ])
 
     with tab_pca:
-        render_tab_pca("qc_metrics", gp2_data_bucket)
+        render_tab_pca(plot_folder, gp2_data_bucket)
 
     with tab_pred_stats:
-        render_tab_pred_stats("qc_metrics", gp2_data_bucket)
+        render_tab_pred_stats(plot_folder, gp2_data_bucket)
 
     with tab_pie:
-        render_tab_pie("qc_metrics", gp2_data_bucket)
+        render_tab_pie(plot_folder, gp2_data_bucket)
 
     with tab_admix:
-        render_tab_admix()
+        render_tab_admix(plot_folder, gp2_data_bucket)
 
     with tab_methods:
         st.markdown(config.DESCRIPTIONS['ancestry_methods'])

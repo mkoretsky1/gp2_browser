@@ -209,13 +209,13 @@ def admix_ancestry_callback():
     st.session_state["old_admix_ancestry_choice"] = st.session_state["admix_ancestry_choice"]
     st.session_state["admix_ancestry_choice"] = st.session_state["new_admix_ancestry_choice"]
 
-def admix_ancestry_select():
+def admix_ancestry_select(proj_labels):
     """
     Widget for selecting admixture ancestry to filter the master key.
     """
     st.markdown("### **Choose an ancestry!**")
-    master_key = st.session_state["master_key"]
-    admix_ancestry_options = ["All"] + list(master_key["label"].dropna().unique())
+
+    admix_ancestry_options = ["All"] + list(proj_labels["Predicted Ancestry"].dropna().unique())
 
     if "admix_ancestry_choice" not in st.session_state:
         st.session_state["admix_ancestry_choice"] = admix_ancestry_options[0]
