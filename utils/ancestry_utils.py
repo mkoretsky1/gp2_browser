@@ -45,7 +45,7 @@ def plot_3d(labeled_df, color, symbol=None, x='PC1', y='PC2', z='PC3', title=Non
     fig.update_traces(marker={'size': 3})
     st.plotly_chart(fig)
 
-def plot_pie(df, proportion_label):
+def plot_pie(df, proportion_label = 'Proportion'):
     """
     Create an interactive pie chart using Plotly.
 
@@ -56,12 +56,12 @@ def plot_pie(df, proportion_label):
         df,
         names='Ancestry Category',
         values=proportion_label,
-        hover_name='Ancestry Category',
         color='Ancestry Category',
         color_discrete_map=config.ANCESTRY_COLOR_MAP
     )
     pie_chart.update_layout(showlegend=True, width=500, height=500)
-    st.plotly_chart(pie_chart)
+
+    return pie_chart
 
 
 def render_tab_pca(pca_folder, gp2_data_bucket):
@@ -187,11 +187,13 @@ def render_tab_pie(pca_folder, gp2_data_bucket):
 
     with pie1:
         st.markdown('### **Reference Panel Ancestry**')
-        plot_pie(pie_table, 'Ref Panel Proportion')
+        ref_pie = plot_pie(pie_table, proportion_label = 'Ref Panel Proportion')
+        st.plotly_chart(ref_pie)
 
     with pie3:
         st.markdown(f'### Release {st.session_state["release_choice"]} Predicted Ancestry')
-        plot_pie(pie_table, 'Predicted Proportion')
+        pred_pie = plot_pie(pie_table, proportion_label = 'Predicted Proportion')
+        st.plotly_chart(pred_pie)
 
     st.dataframe(
         pie_table[['Ancestry Category', 'Ref Panel Counts', 'Predicted Counts']],

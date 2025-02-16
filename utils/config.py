@@ -31,7 +31,8 @@ class AppConfig(BaseSettings):
     'MDE': "#661100",
     'FIN': "#F0E442",
     'CAH': "#40B0A6",
-    'Predicted': "#ababab"
+    'Predicted': "#ababab",
+    'Other Ancestries': '#D3D3D3'
     }
 
     DESCRIPTIONS: Dict[str, str] = {

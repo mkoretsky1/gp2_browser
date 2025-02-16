@@ -30,8 +30,9 @@ def get_master_key(bucket):
         return master_key[master_key.release == release_choice]
 
 def filter_by_cohort(master_key):
-    cohort_select(master_key)
+    master_key = cohort_select(master_key)
     master_key = master_key[master_key["prune_reason"].isnull()]
+
     return master_key
 
 def filter_by_ancestry(master_key):
@@ -164,6 +165,7 @@ def cohort_select(master_key):
 
     st.sidebar.markdown("---")
     place_logos()
+    return st.session_state["master_key"]
 
 def meta_ancestry_callback():
     """
@@ -176,10 +178,9 @@ def meta_ancestry_select():
     """
     Widget for selecting meta ancestry to filter the master key.
     """
-    st.markdown("### **Choose an ancestry!**")
+    st.markdown("#### **Choose an ancestry:**")
     master_key = st.session_state["master_key"]
     meta_ancestry_options = ["All"] + list(master_key["label"].dropna().unique())
-
     if "meta_ancestry_choice" not in st.session_state:
         st.session_state["meta_ancestry_choice"] = meta_ancestry_options[0]
 
