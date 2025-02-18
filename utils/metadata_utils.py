@@ -104,7 +104,11 @@ def display_related_samples(pruned_key, pruned2):
 
     relatedness_df = pd.concat([related_samples, duplicated_samples])
 
-    if len(relatedness_df.label.unique()) > 3:
+    if len(relatedness_df) == 0:
+        pruned2.markdown("#####")
+        pruned2.markdown("##### Related Samples per Ancestry")
+        pruned2.metric(f'Related Samples', 0)
+    elif len(relatedness_df.label.unique()) > 3:
         pruned2.markdown("##### Relatedness per Ancestry")
         related_plot = relatedness_plot(relatedness_df)
         pruned2.plotly_chart(related_plot, use_container_width = True)
@@ -113,4 +117,4 @@ def display_related_samples(pruned_key, pruned2):
         pruned2.markdown("##### Related Samples per Ancestry")
         display_related = relatedness_df[['label', 'related']][relatedness_df.related == 1].value_counts().reset_index()
         for i in range(len(display_related)):
-            pruned2.metric(f'{display_related.iloc[i, 0]} related samples', display_related.iloc[i, 2])
+            pruned2.metric(f'{display_related.iloc[i, 0]} Related Samples', display_related.iloc[i, 2])

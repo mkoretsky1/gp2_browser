@@ -34,8 +34,12 @@ def main():
     with right_col1:
         if not related_df.empty:
             st.header("**Relatedness per Ancestry**")
-            st.plotly_chart(relatedness_plot, use_container_width=True)
-            # st.dataframe(related_df[['label', 'related_count', 'duplicated_count']], use_container_width = True, height = 423)
+            # st.plotly_chart(relatedness_plot, use_container_width=True)
+            related_df.rename(columns = {'label': 'Ancestry Category',
+                                         'related_count': 'Related Sample Count',
+                                         'duplicated_count': 'Duplicated Sample Count'}, inplace = True)
+            related_df.set_index('Ancestry Category', inplace=True)
+            st.dataframe(related_df[['Related Sample Count', 'Duplicated Sample Count']], use_container_width = True, height = 423)
 
     st.header('QC Step 2: Variant-Level Filtering')
     with st.expander("Description", expanded=False):
