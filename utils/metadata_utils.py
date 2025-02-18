@@ -6,9 +6,6 @@ from dataclasses import dataclass
 
 from utils.ancestry_utils import plot_pie
 from utils.quality_control_utils import relatedness_plot
-from utils.config import AppConfig
-
-config = AppConfig()
 
 def plot_age_distribution(master_key, stratify, plot2):
     master_key_age = master_key[master_key['age'].notnull()]
@@ -85,7 +82,6 @@ def display_pruned_samples(pruned_key, pruned1):
     if anc_choice != "All":
         pruned_key = pruned_key[pruned_key["label"] == anc_choice]
 
-    pruned_key['prune_reason'] = pruned_key['prune_reason'].map(config.PRUNE_MAP)
     pruned_steps = pruned_key.prune_reason.value_counts().reset_index()
     pruned_steps.rename(columns = {'prune_reason': 'Pruned Reason', 'count': 'Count'}, inplace = True)
     pruned_steps.set_index('Pruned Reason', inplace = True)
