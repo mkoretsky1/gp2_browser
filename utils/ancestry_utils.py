@@ -76,13 +76,13 @@ def render_tab_pca(pca_folder, gp2_data_bucket):
     ref_pca = blob_as_csv(gp2_data_bucket, f'{pca_folder}/ref_pca_plot.csv', sep=',')
     proj_pca = blob_as_csv(gp2_data_bucket, f'{pca_folder}/proj_pca_plot.csv', sep=',')
     proj_labels = blob_as_csv(gp2_data_bucket, f'{pca_folder}/anc_summary.csv', sep=',')
-    proj_samples = blob_as_csv(gp2_data_bucket, f'{pca_folder}/anc_samples.csv', sep=',')
+    # proj_samples = blob_as_csv(gp2_data_bucket, f'{pca_folder}/anc_samples.csv', sep=',')
 
     total_pca = pd.concat([ref_pca, proj_pca], axis=0)
 
-    pca_col1, pca_col2 = st.columns([1.5, 3])
-    st.markdown('---')
-    col1, col2 = st.columns([1.5, 3])
+    pca_col1, pca_col2 = st.columns([1.5, 3], vertical_alignment = 'center')
+    # st.markdown('---')
+    # col1, col2 = st.columns([1.5, 3])
 
     with pca_col1:
         st.markdown(f'### Reference Panel vs. Release {st.session_state["release_choice"]} PCA')
@@ -90,7 +90,7 @@ def render_tab_pca(pca_folder, gp2_data_bucket):
             st.write(config.DESCRIPTIONS['pca1'])
 
         proj_labels['Select'] = False
-        select_ancestry = st.data_editor(proj_labels, hide_index=True, use_container_width=True)
+        select_ancestry = st.data_editor(proj_labels, hide_index=True, use_container_width=True, height=423)
         selection_list = select_ancestry.loc[select_ancestry['Select'] == True]['Predicted Ancestry']
 
     with pca_col2:
@@ -105,14 +105,14 @@ def render_tab_pca(pca_folder, gp2_data_bucket):
         else:
             plot_3d(total_pca, 'label')
 
-    with col1:
-        st.markdown(f'### Release {st.session_state["release_choice"]} PCA')
-        with st.expander("Description"):
-            st.write(config.DESCRIPTIONS['pca2'])
-        st.dataframe(proj_samples[['IID', 'Predicted Ancestry']], hide_index=True, use_container_width=True)
+    # with col1:
+    #     st.markdown(f'### Release {st.session_state["release_choice"]} PCA')
+    #     with st.expander("Description"):
+    #         st.write(config.DESCRIPTIONS['pca2'])
+    #     st.dataframe(proj_samples[['IID', 'Predicted Ancestry']], hide_index=True, use_container_width=True)
 
-    with col2:
-        plot_3d(proj_pca, 'Predicted Ancestry')
+    # with col2:
+    #     plot_3d(proj_pca, 'Predicted Ancestry')
 
 
 def plot_confusion_matrix(confusion_matrix):

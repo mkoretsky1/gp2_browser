@@ -35,7 +35,7 @@ def main():
     st.markdown('#### Stratify Age by:')
     stratify = st.selectbox("Stratify Age by:", options = ['None', 'Sex', 'Phenotype'], label_visibility="collapsed")
 
-    plot1, plot2 = st.columns([1, 1.75])
+    plot1, plot2 = st.columns([1, 1.75], vertical_alignment = 'center')
 
     plot_age_distribution(master_key, stratify, plot2)
     display_phenotype_counts(master_key, plot1)

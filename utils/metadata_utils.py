@@ -56,7 +56,7 @@ def display_phenotype_counts(master_key, plot1):
     plot1.dataframe(combined_counts, use_container_width = True)
 
 def display_ancestry(full_cohort):
-    anc1, anc2 = st.columns(2)
+    anc1, anc2 = st.columns(2, vertical_alignment = 'center')
     anc_choice =  st.session_state["meta_ancestry_choice"]
 
     anc_df = full_cohort.label.value_counts().reset_index()
@@ -71,10 +71,10 @@ def display_ancestry(full_cohort):
         release_pie = plot_pie(anc_df)
         anc2.plotly_chart(release_pie)
         anc_df.set_index('Ancestry Category', inplace = True)
-        anc1.dataframe(anc_df['Count'], use_container_width = True, height = 420)
+        anc1.dataframe(anc_df['Count'], use_container_width = True)
 
 def display_pruned_samples(pruned_key):
-    pruned1, pruned2, pruned3, pruned4 = st.columns([1.75, 0.5, 1, 1])
+    pruned1, pruned2, pruned3, pruned4 = st.columns([1.75, 0.5, 1, 1], vertical_alignment = 'center')
     anc_choice = st.session_state["meta_ancestry_choice"]
     if anc_choice != "All":
         pruned_key = pruned_key[pruned_key["label"] == anc_choice]
