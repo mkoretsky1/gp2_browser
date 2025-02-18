@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from dataclasses import dataclass
 
 from utils.ancestry_utils import plot_pie
+from utils.quality_control_utils import relatedness_plot
 from utils.config import AppConfig
 
 config = AppConfig()
@@ -77,8 +79,8 @@ def display_ancestry(full_cohort):
         anc_df.set_index('Ancestry Category', inplace = True)
         anc1.dataframe(anc_df['Count'], use_container_width = True)
 
-def display_pruned_samples(pruned_key):
-    pruned1, pruned2, pruned3, pruned4 = st.columns([1.75, 0.5, 1, 1], vertical_alignment = 'center')
+def display_pruned_samples(pruned_key, pruned1):
+    # pruned1, pruned2, pruned3, pruned4 = st.columns([1.75, 0.5, 1, 1], vertical_alignment = 'center')
     anc_choice = st.session_state["meta_ancestry_choice"]
     if anc_choice != "All":
         pruned_key = pruned_key[pruned_key["label"] == anc_choice]
@@ -87,9 +89,24 @@ def display_pruned_samples(pruned_key):
     pruned_steps = pruned_key.prune_reason.value_counts().reset_index()
     pruned_steps.rename(columns = {'prune_reason': 'Pruned Reason', 'count': 'Count'}, inplace = True)
     pruned_steps.set_index('Pruned Reason', inplace = True)
-    related_samples = pruned_key[pruned_key.related == 1]
-    duplicated_samples = pruned_key[pruned_key.prune_reason == 'Duplicated Prune']
+    # related_samples = pruned_key[pruned_key.related == 1]
+    # duplicated_samples = pruned_key[pruned_key.prune_reason == 'Duplicated Prune']
 
+    pruned1.markdown("#####")
+    pruned1.markdown("##### Sample-Level Release Prep")
     pruned1.dataframe(pruned_steps, use_container_width = True)
-    pruned3.metric("Related Samples", len(related_samples))
-    pruned4.metric("Duplicated Samples", len(duplicated_samples))
+    # pruned3.metric("Related Samples", len(related_samples))
+    # pruned4.metric("Duplicated Samples", len(duplicated_samples))
+
+
+def display_related_samples(pruned_key, pruned2):
+    related_samples = pruned_key[pruned_key.related == 1]
+    related_samples['related_count'] = 1
+
+    duplicated_samples = pruned_key[pruned_key.prune_reason == 'Duplicated Prune']
+    duplicated_samples['duplicated_count'] = 1
+
+    relatedness_df = pd.concat([related_samples, duplicated_samples])
+    related_plot = relatedness_plot(relatedness_df)
+    pruned2.markdown("##### Relatedness per Ancestry")
+    pruned2.plotly_chart(related_plot, use_container_width = True)

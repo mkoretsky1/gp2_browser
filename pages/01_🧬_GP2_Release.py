@@ -11,7 +11,7 @@ from utils.hold_data import (
     filter_by_ancestry,
     update_sex_labels,
 )
-from utils.metadata_utils import display_ancestry, plot_age_distribution, display_phenotype_counts, display_pruned_samples
+from utils.metadata_utils import display_ancestry, plot_age_distribution, display_phenotype_counts, display_pruned_samples, display_related_samples
 
 def main():
     config_page('GP2 Release')
@@ -42,7 +42,9 @@ def main():
     st.markdown('---')
 
     st.markdown('## :blue[QC Breakdown]')  
-    display_pruned_samples(pruned_key)
+    pruned1, pruned2 = st.columns([1, 1.75])
+    display_pruned_samples(pruned_key, pruned1)
+    display_related_samples(pruned_key, pruned2)
 
 
 if __name__ == "__main__":

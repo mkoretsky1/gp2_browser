@@ -18,6 +18,36 @@ def load_qc_data():
 
     return funnel_df, related_df, variant_df
 
+def relatedness_plot(relatedness_df):
+    relatedness_plot = go.Figure(
+        data=[
+            go.Bar(
+                y=relatedness_df.label, 
+                x=-relatedness_df['duplicated_count'], 
+                orientation='h', 
+                name="Duplicated", 
+                marker_color="#D55E00"
+            ),
+            go.Bar(
+                y=relatedness_df.label, 
+                x=relatedness_df['related_count'], 
+                orientation='h', 
+                name="Related", 
+                marker_color="#0072B2"
+            )
+        ]
+    )
+
+    relatedness_plot.update_layout(
+        barmode='relative', 
+        height=450, 
+        width=750, 
+        autosize=False,
+        margin=dict(l=0, r=0, t=10, b=70)
+    )
+
+    return relatedness_plot
+
 def create_qc_plots(funnel_df, relatedness_df, variant_df):
     funnel_plot = go.Figure(go.Funnelarea(
         text=[f'<b>{i}</b>' for i in funnel_df['step_name']],
@@ -47,7 +77,7 @@ def create_qc_plots(funnel_df, relatedness_df, variant_df):
         data=[
             go.Bar(
                 y=relatedness_df.label, 
-                x=relatedness_df['duplicated_count'], 
+                x=-relatedness_df['duplicated_count'], 
                 orientation='h', 
                 name="Duplicated", 
                 marker_color="#D55E00"
