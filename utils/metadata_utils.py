@@ -75,6 +75,10 @@ def display_ancestry(full_cohort):
 
 def display_pruned_samples(pruned_key):
     pruned1, pruned2, pruned3, pruned4 = st.columns([1.75, 0.5, 1, 1])
+    anc_choice = st.session_state["meta_ancestry_choice"]
+    if anc_choice != "All":
+        pruned_key = pruned_key[pruned_key["label"] == anc_choice]
+
     pruned_steps = pruned_key.prune_reason.value_counts().reset_index()
     pruned_steps.rename(columns = {'prune_reason': 'Pruned Reason', 'count': 'Count'}, inplace = True)
     pruned_steps.set_index('Pruned Reason', inplace = True)
