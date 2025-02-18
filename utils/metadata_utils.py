@@ -4,6 +4,9 @@ import plotly.express as px
 from dataclasses import dataclass
 
 from utils.ancestry_utils import plot_pie
+from utils.config import AppConfig
+
+config = AppConfig()
 
 def plot_age_distribution(master_key, stratify, plot2):
     master_key_age = master_key[master_key['age'].notnull()]
@@ -40,8 +43,9 @@ def plot_age_distribution(master_key, stratify, plot2):
     plot2.plotly_chart(fig)
 
 def display_phenotype_counts(master_key, plot1):
-    male_pheno = master_key.loc[master_key['sex'] == 'Male', 'pheno']
-    female_pheno = master_key.loc[master_key['sex'] == 'Female', 'pheno']
+    master_key.rename(columns = {'pheno': 'Phenotype'}, inplace = True)
+    male_pheno = master_key.loc[master_key['sex'] == 'Male', 'Phenotype']
+    female_pheno = master_key.loc[master_key['sex'] == 'Female', 'Phenotype']
 
     combined_counts = pd.DataFrame({
         'Male': male_pheno.value_counts(),
@@ -79,11 +83,12 @@ def display_pruned_samples(pruned_key):
     if anc_choice != "All":
         pruned_key = pruned_key[pruned_key["label"] == anc_choice]
 
+    pruned_key['prune_reason'] = pruned_key['prune_reason'].map(config.PRUNE_MAP)
     pruned_steps = pruned_key.prune_reason.value_counts().reset_index()
     pruned_steps.rename(columns = {'prune_reason': 'Pruned Reason', 'count': 'Count'}, inplace = True)
     pruned_steps.set_index('Pruned Reason', inplace = True)
     related_samples = pruned_key[pruned_key.related == 1]
-    duplicated_samples = pruned_key[pruned_key.prune_reason == 'duplicated']
+    duplicated_samples = pruned_key[pruned_key.prune_reason == 'Duplicated Prune']
 
     pruned1.dataframe(pruned_steps, use_container_width = True)
     pruned3.metric("Related Samples", len(related_samples))

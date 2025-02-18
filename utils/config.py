@@ -15,6 +15,16 @@ class AppConfig(BaseSettings):
         0: "Unknown",
     }
 
+    PRUNE_MAP: Dict[str, str] = {
+        "callrate": "Callrate Prune",
+        "duplicated": "Duplicated Prune",
+        "sex": "Sex Prune",
+        "het": "Heterozygosity Prune",
+        "missing_idat": "Missing IDAT File",
+        "missing_bed": "Missing BED File",
+        "clinical_inconsistency": "Inconsistency with Clinical Manifests"
+    }
+
     ANCESTRY_OPTIONS: List[str] = [
         "AAC","AFR","AJ","AMR","CAH","CAS","EAS","EUR","FIN","MDE","SAS"
     ]

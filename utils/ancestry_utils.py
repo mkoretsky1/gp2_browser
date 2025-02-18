@@ -40,7 +40,8 @@ def plot_3d(labeled_df, color, symbol=None, x='PC1', y='PC2', z='PC3', title=Non
         range_x=x_range,
         range_y=y_range,
         range_z=z_range,
-        hover_name="IID"
+        hover_name="IID",
+        height = 700
     )
     fig.update_traces(marker={'size': 3})
     st.plotly_chart(fig)
@@ -80,9 +81,9 @@ def render_tab_pca(pca_folder, gp2_data_bucket):
 
     total_pca = pd.concat([ref_pca, proj_pca], axis=0)
 
-    pca_col1, pca_col2 = st.columns([1.5, 3], vertical_alignment = 'center')
+    pca_col1, pca_col2 = st.columns([1.75, 3], vertical_alignment = 'center')
     # st.markdown('---')
-    # col1, col2 = st.columns([1.5, 3])
+    # col1, col2 = st.columns([1.75, 3])
 
     with pca_col1:
         st.markdown(f'### Reference Panel vs. Release {st.session_state["release_choice"]} PCA')

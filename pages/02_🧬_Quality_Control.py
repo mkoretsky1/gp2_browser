@@ -41,7 +41,7 @@ def main():
     with st.expander("Description", expanded=False):
         st.markdown(config.DESCRIPTIONS['variant'])
 
-    st.plotly_chart(variant_plot)
+    st.plotly_chart(variant_plot, use_container_width = True)
 
 if __name__ == "__main__":
     main()
