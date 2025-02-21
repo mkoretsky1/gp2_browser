@@ -47,7 +47,11 @@ def main():
     with tab_ancestry:
         display_ancestry(master_key_cohort)
         st.markdown('----')
-        ancestry_pca(master_key, gp2_data_bucket)
+
+        if "plot_title" in st.session_state:
+            st.plotly_chart(st.session_state.plot_title)
+        else:
+            ancestry_pca(master_key, gp2_data_bucket)
 
     with tab_age:
         st.markdown('#### Stratify Age by:')

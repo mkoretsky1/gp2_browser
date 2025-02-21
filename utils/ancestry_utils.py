@@ -44,7 +44,7 @@ def plot_3d(labeled_df, color, symbol=None, x='PC1', y='PC2', z='PC3', title=Non
         height = 700
     )
     fig.update_traces(marker={'size': 3})
-    st.plotly_chart(fig)
+    return fig
 
 def plot_pie(df, proportion_label = 'Proportion'):
     """
