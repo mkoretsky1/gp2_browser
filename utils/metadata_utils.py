@@ -4,7 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dataclasses import dataclass
 
-from utils.ancestry_utils import plot_pie
+from utils.hold_data import blob_as_csv
+from utils.ancestry_utils import plot_pie, plot_3d
 from utils.quality_control_utils import relatedness_plot
 
 def plot_age_distribution(master_key, stratify, plot2):
@@ -76,8 +77,13 @@ def display_ancestry(full_cohort):
         anc_df.set_index('Ancestry Category', inplace = True)
         anc1.dataframe(anc_df['Count'], use_container_width = True)
 
+def ancestry_pca(master_key, gp2_data_bucket):
+    st.markdown(f'### {st.session_state["cohort_choice"]} PCA for {st.session_state["meta_ancestry_choice"]} Ancestry')
+    proj_samples = blob_as_csv(gp2_data_bucket, f"qc_metrics/release{st.session_state['release_choice']}/proj_pca_plot.csv", sep=',')
+    display_samples = proj_samples[proj_samples.IID.isin(master_key.IID2)] # eventually update
+    plot_3d(display_samples, 'Predicted Ancestry')
+
 def display_pruned_samples(pruned_key, pruned1):
-    # pruned1, pruned2, pruned3, pruned4 = st.columns([1.75, 0.5, 1, 1], vertical_alignment = 'center')
     anc_choice = st.session_state["meta_ancestry_choice"]
     if anc_choice != "All":
         pruned_key = pruned_key[pruned_key["label"] == anc_choice]
@@ -85,36 +91,33 @@ def display_pruned_samples(pruned_key, pruned1):
     pruned_steps = pruned_key.prune_reason.value_counts().reset_index()
     pruned_steps.rename(columns = {'prune_reason': 'Pruned Reason', 'count': 'Count'}, inplace = True)
     pruned_steps.set_index('Pruned Reason', inplace = True)
-    # related_samples = pruned_key[pruned_key.related == 1]
-    # duplicated_samples = pruned_key[pruned_key.prune_reason == 'Duplicated Prune']
 
     pruned1.markdown("#####")
     pruned1.markdown("##### Sample-Level Release Prep")
     pruned1.dataframe(pruned_steps, use_container_width = True)
-    # pruned3.metric("Related Samples", len(related_samples))
-    # pruned4.metric("Duplicated Samples", len(duplicated_samples))
 
 
 def display_related_samples(pruned_key, pruned2):
-    related_samples = pruned_key[pruned_key.related == 1]
-    related_samples['related_count'] = 1
+    related_samples = pruned_key[pruned_key.related == 1][['label', 'related']]
+    related_samples['related_count'] = related_samples.groupby(['label'])['related'].transform('sum')
 
     duplicated_samples = pruned_key[pruned_key.prune_reason == 'Duplicated Prune']
-    duplicated_samples['duplicated_count'] = 1
+    duplicated_samples['duplicated'] = 1
+    duplicated_samples['duplicated_count'] = duplicated_samples.groupby(['label'])['duplicated'].transform('sum')
 
-    relatedness_df = pd.concat([related_samples, duplicated_samples])
+    relatedness_df = related_samples[['label', 'related_count']].merge(duplicated_samples[['label', 'duplicated_count']], on = 'label', how = 'left')
+    relatedness_df.drop_duplicates(inplace = True)
 
     if len(relatedness_df) == 0:
         pruned2.markdown("#####")
         pruned2.markdown("##### Related Samples per Ancestry")
-        pruned2.metric(f'Related Samples', 0)
-    elif len(relatedness_df.label.unique()) > 3:
+        pruned2.metric(f'Total Related Samples', 0)
+    elif len(relatedness_df.label) > 3:
         pruned2.markdown("##### Relatedness per Ancestry")
         related_plot = relatedness_plot(relatedness_df)
         pruned2.plotly_chart(related_plot, use_container_width = True)
     else:
         pruned2.markdown("#####")
         pruned2.markdown("##### Related Samples per Ancestry")
-        display_related = relatedness_df[['label', 'related']][relatedness_df.related == 1].value_counts().reset_index()
-        for i in range(len(display_related)):
-            pruned2.metric(f'{display_related.iloc[i, 0]} Related Samples', display_related.iloc[i, 2])
+        for i in range(len(relatedness_df)):
+            pruned2.metric(f'{relatedness_df.iloc[i, 0]} Related Samples', int(relatedness_df.iloc[i, 1]))

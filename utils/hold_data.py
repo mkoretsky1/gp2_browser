@@ -14,6 +14,12 @@ def blob_as_csv(bucket, path, sep=r"\s+", header="infer"):
     df = pd.read_csv(blob_io, sep=sep, header=header)
     return df
 
+def blob_as_html(bucket, path):
+    blob = bucket.get_blob(path)
+    blob_bytes = blob.download_as_bytes()
+    blob_str = str(blob_bytes, "utf-8")  # Convert bytes to string
+    return blob_str 
+
 def get_gcloud_bucket(bucket_name):
     storage_client = storage.Client(project=config.GCP_PROJECT)
     bucket = storage_client.bucket(bucket_name, user_project=config.GCP_PROJECT)
