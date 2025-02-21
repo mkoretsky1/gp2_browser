@@ -48,10 +48,12 @@ def main():
         display_ancestry(master_key_cohort)
         st.markdown('----')
 
-        if "plot_title" in st.session_state:
-            st.plotly_chart(st.session_state.plot_title)
-        else:
-            ancestry_pca(master_key, gp2_data_bucket)
+        plot_title = f'{st.session_state["cohort_choice"]} PCA for {st.session_state["meta_ancestry_choice"]} Ancestry'
+        if plot_title not in st.session_state:
+            ancestry_pca(master_key, plot_title, gp2_data_bucket)
+        
+        st.markdown(f'#### {plot_title}')
+        st.plotly_chart(st.session_state[plot_title])
 
     with tab_age:
         st.markdown('#### Stratify Age by:')

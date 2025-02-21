@@ -77,11 +77,10 @@ def display_ancestry(full_cohort):
         anc_df.set_index('Ancestry Category', inplace = True)
         anc1.dataframe(anc_df['Count'], use_container_width = True)
 
-def ancestry_pca(master_key, gp2_data_bucket):
-    plot_title = f'{st.session_state["cohort_choice"]} PCA for {st.session_state["meta_ancestry_choice"]} Ancestry'
+def ancestry_pca(master_key, plot_title, gp2_data_bucket):
     proj_samples = blob_as_csv(gp2_data_bucket, f"qc_metrics/release{st.session_state['release_choice']}/proj_pca_plot.csv", sep=',')
     display_samples = proj_samples[proj_samples.IID.isin(master_key.IID2)] # eventually update with new dataframe
-    st.session_state.plot_title = plot_3d(display_samples, 'Predicted Ancestry', title=plot_title)
+    st.session_state[plot_title] = plot_3d(display_samples, 'Predicted Ancestry')
 
 def display_pruned_samples(pruned_key, pruned1):
     anc_choice = st.session_state["meta_ancestry_choice"]
