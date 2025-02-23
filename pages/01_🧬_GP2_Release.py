@@ -30,9 +30,9 @@ def main():
     gp2_data_bucket = get_gcloud_bucket('gt_app_utils')
     master_key = get_master_key(gp2_data_bucket)
     master_key_cohort = filter_by_cohort(master_key)
+    
     pruned_key = st.session_state['master_key']
     st.session_state['master_key'] = master_key_cohort
-
     st.title(f"{st.session_state['cohort_choice']} Metadata")
 
     master_key = filter_by_ancestry(master_key_cohort)
@@ -46,9 +46,9 @@ def main():
 
     with tab_ancestry:
         display_ancestry(master_key_cohort)
-        st.markdown('----')
-
-        plot_title = f'{st.session_state["cohort_choice"]} PCA for {st.session_state["meta_ancestry_choice"]} Ancestry'
+        st.markdown('----') 
+        
+        plot_title = f'{st.session_state["cohort_choice"]} PCA for {st.session_state["meta_ancestry_choice"]} Samples'
         if plot_title not in st.session_state:
             ancestry_pca(master_key, plot_title, gp2_data_bucket)
         
