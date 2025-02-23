@@ -10,8 +10,8 @@ class CarriersConfig:
     """config settings for the application."""
     CARRIERS_BUCKET_NAME: str = 'gp2_carriers'
     GP2_DATA_BUCKET_NAME: str = 'gt_app_utils'
-    CARRIERS_FILE_PATH: str = 'carriers_string_full.csv'
-    NON_VARIANT_COLUMNS: List[str] = ['GP2ID', 'ancestry', 'study']
+    CARRIERS_FILE_PATH: str = 'carriers_data/carriers_string_full.csv'
+    NON_VARIANT_COLUMNS: List[str] = ['IID', 'ancestry', 'study']
     WILD_TYPE: str = 'WT/WT'
     MISSING_GENOTYPE: str = './.'
 
@@ -93,7 +93,7 @@ class CarrierDataProcessor:
                 status = self.get_carrier_status(row, selected_variants, zygosity_filter)
                 if status:
                     carriers_status.append({
-                        'GP2ID': row['GP2ID'],
+                        'IID': row['IID'],
                         'ancestry': row['ancestry'],
                         'cohort': row['study'],
                         **status

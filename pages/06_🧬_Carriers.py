@@ -28,16 +28,15 @@ def main():
 
     # initialize buckets
     gp2_data_bucket = get_gcloud_bucket(CarriersConfig.GP2_DATA_BUCKET_NAME)
-    carriers_bucket = get_gcloud_bucket(CarriersConfig.CARRIERS_BUCKET_NAME)
-    
+
     master_key = get_master_key(gp2_data_bucket)
     master_key = filter_by_cohort(master_key)
 
     st.title("Genetic Variant Carrier Status Viewer")
 
     # load carriers data - subset by samples in master key
-    carriers_df_in = blob_as_csv(carriers_bucket, CarriersConfig.CARRIERS_FILE_PATH, sep=',')
-    carriers_df = carriers_df_in.loc[carriers_df_in.GP2ID.isin(master_key.IID)]
+    carriers_df_in = blob_as_csv(gp2_data_bucket, CarriersConfig.CARRIERS_FILE_PATH, sep=',')
+    carriers_df = carriers_df_in.loc[carriers_df_in.IID.isin(master_key.IID)]
     snp_cols = [col for col in carriers_df.columns if col not in CarriersConfig.NON_VARIANT_COLUMNS]
     filtered_carriers_df = carriers_df[carriers_df[snp_cols].apply(
     lambda row: any(val not in ["WT/WT", "./."] for val in row),
