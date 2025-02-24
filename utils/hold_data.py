@@ -14,6 +14,12 @@ def blob_as_csv(bucket, path, sep=r"\s+", header="infer"):
     df = pd.read_csv(blob_io, sep=sep, header=header)
     return df
 
+def blob_as_html(bucket, path):
+    blob = bucket.get_blob(path)
+    blob_bytes = blob.download_as_bytes()
+    blob_str = str(blob_bytes, "utf-8")  # Convert bytes to string
+    return blob_str 
+
 def get_gcloud_bucket(bucket_name):
     storage_client = storage.Client(project=config.GCP_PROJECT)
     bucket = storage_client.bucket(bucket_name, user_project=config.GCP_PROJECT)
@@ -21,17 +27,18 @@ def get_gcloud_bucket(bucket_name):
 
 def get_master_key(bucket):
     release_choice = st.session_state["release_choice"]
-    base_path = f"{st.session_state['release_bucket']}/clinical_data"
-    if release_choice == 8:
-        master_key_path = f"{base_path}/master_key_release7_final.csv"
+    master_key_path = f"release_keys/nba_app_key.csv"
+    master_key = blob_as_csv(bucket, master_key_path, sep=",")
+    latest_rel = max(master_key.release)
+    if release_choice == latest_rel:
+        return master_key
     else:
-        master_key_path = f"{base_path}/master_key_release{release_choice}_final.csv"
-
-    return blob_as_csv(bucket, master_key_path, sep=",")
+        return master_key[master_key.release == release_choice]
 
 def filter_by_cohort(master_key):
-    cohort_select(master_key)
-    master_key = master_key[master_key["pruned"] == 0]
+    master_key = cohort_select(master_key)
+    master_key = master_key[master_key["prune_reason"].isnull()]
+
     return master_key
 
 def filter_by_ancestry(master_key):
@@ -41,15 +48,8 @@ def filter_by_ancestry(master_key):
         master_key = master_key[master_key["label"] == meta_ancestry_choice]
     return master_key
 
-def rename_columns(master_key):
-    release_choice = st.session_state["release_choice"]
-    column_map = config.RELEASE_COLUMN_MAP.get(release_choice, {})
-    if column_map:
-        master_key.rename(columns=column_map, inplace=True)
-    return master_key
-
 def update_sex_labels(master_key):
-    master_key["Sex"].replace(config.SEX_MAP, inplace=True)
+    master_key["sex"].replace(config.SEX_MAP, inplace=True)
     return master_key
 
 def config_page(title):
@@ -97,7 +97,7 @@ def release_callback():
 
 def release_select():
     st.sidebar.markdown("### **Choose a release!**")
-    release_options = [8, 7, 6]
+    release_options = [9] # can replace with master key reference
 
     if "release_choice" not in st.session_state:
         st.session_state["release_choice"] = release_options[0]
@@ -112,8 +112,6 @@ def release_select():
         key="new_release_choice",
         on_change=release_callback
     )
-
-    st.session_state["release_bucket"] = config.RELEASE_BUCKET_MAP[st.session_state["release_choice"]]
 
 def cohort_callback():
     """
@@ -162,8 +160,9 @@ def cohort_select(master_key):
         master_key_cohort = master_key[master_key["study"] == st.session_state["cohort_choice"]]
         st.session_state["master_key"] = master_key_cohort
 
-    pruned_counts = st.session_state.master_key["pruned"].value_counts()
-    pruned_samples = pruned_counts[1] if 1 in pruned_counts else 0
+    # pruned_counts = st.session_state.master_key["pruned"].value_counts()
+    # pruned_samples = pruned_counts[1] if 1 in pruned_counts else 0
+    pruned_samples = len(st.session_state.master_key[st.session_state.master_key["prune_reason"].notnull()])
     total_count = st.session_state["master_key"].shape[0]
 
     st.sidebar.metric(" ", st.session_state["cohort_choice"])
@@ -172,6 +171,7 @@ def cohort_select(master_key):
 
     st.sidebar.markdown("---")
     place_logos()
+    return st.session_state["master_key"]
 
 def meta_ancestry_callback():
     """
@@ -184,10 +184,9 @@ def meta_ancestry_select():
     """
     Widget for selecting meta ancestry to filter the master key.
     """
-    st.markdown("### **Choose an ancestry!**")
+    st.markdown("#### **Choose an ancestry:**")
     master_key = st.session_state["master_key"]
     meta_ancestry_options = ["All"] + list(master_key["label"].dropna().unique())
-
     if "meta_ancestry_choice" not in st.session_state:
         st.session_state["meta_ancestry_choice"] = meta_ancestry_options[0]
 
@@ -217,13 +216,13 @@ def admix_ancestry_callback():
     st.session_state["old_admix_ancestry_choice"] = st.session_state["admix_ancestry_choice"]
     st.session_state["admix_ancestry_choice"] = st.session_state["new_admix_ancestry_choice"]
 
-def admix_ancestry_select():
+def admix_ancestry_select(proj_labels):
     """
     Widget for selecting admixture ancestry to filter the master key.
     """
     st.markdown("### **Choose an ancestry!**")
-    master_key = st.session_state["master_key"]
-    admix_ancestry_options = ["All"] + list(master_key["label"].dropna().unique())
+
+    admix_ancestry_options = ["All"] + list(proj_labels["Predicted Ancestry"].dropna().unique())
 
     if "admix_ancestry_choice" not in st.session_state:
         st.session_state["admix_ancestry_choice"] = admix_ancestry_options[0]

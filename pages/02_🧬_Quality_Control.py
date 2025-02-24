@@ -1,15 +1,10 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from utils.hold_data import (
     release_select, 
     config_page
 )
-from utils.quality_control_utils import (
-    load_qc_data,
-    prepare_funnel_data,
-    prepare_relatedness_data,
-    prepare_variant_data,
-    create_qc_plots
-)
+from utils.quality_control_utils import load_qc_data
 from utils.config import AppConfig
 
 config = AppConfig()
@@ -19,64 +14,31 @@ def main():
     config_page('Quality Control')
     release_select()
 
-    master_key, df_qc = load_qc_data()
+    funnel_plot, related_df, variant_plot = load_qc_data()
 
-    funnel_df = prepare_funnel_data(master_key)
-    ancestry_dict = {
-        'AFR': 'African', 
-        'SAS': 'South Asian', 
-        'EAS': 'East Asian', 
-        'EUR': 'European',
-        'AMR': 'American', 
-        'AJ': 'Ashkenazi Jewish', 
-        'AAC': 'African American/Afro-Caribbean',
-        'CAS': 'Central Asian', 
-        'MDE': 'Middle Eastern', 
-        'FIN': 'Finnish', 
-        'CAH': 'Complex Admixture History'
-    }
-
-    ancestry_index = {
-        'AFR': 3,
-        'SAS': 7, 
-        'EAS': 8, 
-        'EUR': 0, 
-        'AMR': 2, 
-        'AJ': 1,
-        'AAC': 4, 
-        'CAS': 5, 
-        'MDE': 6, 
-        'FIN': 9, 
-        'CAH': 10
-    }
-
-    relatedness_df = prepare_relatedness_data(master_key, ancestry_dict, ancestry_index)
-    variant_df = prepare_variant_data(df_qc)
-
-    funnel_plot, relatedness_plot, variant_plot = create_qc_plots(funnel_df, relatedness_df, variant_df)
-
-    st.title(f"{st.session_state['cohort_choice']} Metrics")
+    st.title(f"Release {st.session_state['release_choice']} Metrics")
 
     st.header('QC Step 1: Sample-Level Filtering')
     with st.expander("Description", expanded=False):
         st.markdown(config.DESCRIPTIONS['qc'])
 
-    left_col1, right_col1 = st.columns(2)
+    left_col1, right_col1 = st.columns([1.5,2])
 
     with left_col1:
         st.header("**All Sample Filtering Counts**")
-        st.plotly_chart(funnel_plot, use_container_width=True)
+        components.html(funnel_plot, height=440)
 
     with right_col1:
-        if not relatedness_df.empty:
+        if not related_df.empty:
             st.header("**Relatedness per Ancestry**")
-            st.plotly_chart(relatedness_plot, use_container_width=True)
+            related_df.set_index('Ancestry Category', inplace=True)
+            st.dataframe(related_df, use_container_width = True, height = 423)
 
     st.header('QC Step 2: Variant-Level Filtering')
     with st.expander("Description", expanded=False):
         st.markdown(config.DESCRIPTIONS['variant'])
 
-    st.plotly_chart(variant_plot)
+    components.html(variant_plot, height=600)
 
 if __name__ == "__main__":
     main()

@@ -9,9 +9,9 @@ from utils.hold_data import (
 class CarriersConfig:
     """config settings for the application."""
     CARRIERS_BUCKET_NAME: str = 'gp2_carriers'
-    GP2_DATA_BUCKET_NAME: str = 'gp2tier2'
-    CARRIERS_FILE_PATH: str = 'carriers_string_full.csv'
-    NON_VARIANT_COLUMNS: List[str] = ['GP2ID', 'ancestry', 'study']
+    GP2_DATA_BUCKET_NAME: str = 'gt_app_utils'
+    CARRIERS_FILE_PATH: str = 'carriers_data/carriers_string_full.csv'
+    NON_VARIANT_COLUMNS: List[str] = ['IID', 'ancestry', 'study']
     WILD_TYPE: str = 'WT/WT'
     MISSING_GENOTYPE: str = './.'
 
@@ -93,19 +93,13 @@ class CarrierDataProcessor:
                 status = self.get_carrier_status(row, selected_variants, zygosity_filter)
                 if status:
                     carriers_status.append({
-                        'GP2ID': row['GP2ID'],
+                        'IID': row['IID'],
                         'ancestry': row['ancestry'],
                         'cohort': row['study'],
                         **status
                     })
 
         return pd.DataFrame(carriers_status) if carriers_status else None
-
-def get_master_key_path(release_bucket: str, release_choice: int) -> str:
-    """generate the master key path based on release choice"""
-    if release_choice == 8:
-        return f'{release_bucket}/clinical_data/master_key_release7_final.csv'
-    return f'{release_bucket}/clinical_data/master_key_release{release_choice}_final.csv'
 
 def setup_page() -> None:
     """config the page and initialize session state"""
