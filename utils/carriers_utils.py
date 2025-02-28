@@ -6,18 +6,19 @@ from utils.hold_data import (
     config_page
 )
 
+
 class CarriersConfig:
     """config settings for the application."""
-    CARRIERS_BUCKET_NAME: str = 'gp2_carriers'
     GP2_DATA_BUCKET_NAME: str = 'gt_app_utils'
-    CARRIERS_FILE_PATH: str = 'carriers_data/carriers_string_full.csv'
+    CARRIERS_FILE_PATH: str = f'carriers_data/release{st.session_state["release_choice"]}_carriers/release{st.session_state["release_choice"]}_carriers_string.csv'
     NON_VARIANT_COLUMNS: List[str] = ['IID', 'ancestry', 'study']
     WILD_TYPE: str = 'WT/WT'
     MISSING_GENOTYPE: str = './.'
 
+
 class GenotypeMatcher:
     """handler for genotype matching and carrier status"""
-    
+
     @staticmethod
     def is_carrier(genotype: str) -> bool:
         """check if a genotype indicates carrier status"""
@@ -31,9 +32,10 @@ class GenotypeMatcher:
         alleles = genotype.split('/')
         return alleles[0] == alleles[1] and alleles[0] != "."
 
+
 class CarrierDataProcessor:
     """processes carrier data and manages carrier status determination"""
-    
+
     def __init__(self, df: pd.DataFrame):
         self.df = df
         self.variants = self._get_variants()
@@ -42,12 +44,12 @@ class CarrierDataProcessor:
         """xtract variant columns from the dataframe"""
         return [col for col in self.df.columns if col not in CarriersConfig.NON_VARIANT_COLUMNS]
 
-    def get_carrier_status(self, row: pd.Series, selected_variants: List[str], 
-                          zygosity_filter: str = 'All') -> Dict[str, str]:
+    def get_carrier_status(self, row: pd.Series, selected_variants: List[str],
+                           zygosity_filter: str = 'All') -> Dict[str, str]:
         """determine carrier status for a given row based on selected variants and zygosity filter"""
         status = {}
         has_carrier = False
-        
+
         for variant in selected_variants:
             if variant in row:
                 genotype = row[variant]
@@ -56,8 +58,9 @@ class CarrierDataProcessor:
                         has_carrier = True
 
         if has_carrier:
-            status = {variant: row[variant] for variant in selected_variants if variant in row}
-        
+            status = {variant: row[variant]
+                      for variant in selected_variants if variant in row}
+
         return status
 
     def _matches_zygosity_filter(self, genotype: str, zygosity_filter: str) -> bool:
@@ -76,8 +79,8 @@ class CarrierDataProcessor:
             return self.df[self.df['ancestry'] == ancestry]
         return self.df
 
-    def process_carriers(self, selected_variants: List[str], ancestry: str, 
-                        zygosity_filter: str) -> Optional[pd.DataFrame]:
+    def process_carriers(self, selected_variants: List[str], ancestry: str,
+                         zygosity_filter: str) -> Optional[pd.DataFrame]:
         """process and return carrier data based on selected filters"""
         if not selected_variants:
             return None
@@ -86,11 +89,12 @@ class CarrierDataProcessor:
         carriers_status = []
 
         for _, row in working_df.iterrows():
-            has_variant = any(GenotypeMatcher.is_carrier(row[variant]) 
-                            for variant in selected_variants)
+            has_variant = any(GenotypeMatcher.is_carrier(row[variant])
+                              for variant in selected_variants)
 
             if has_variant:
-                status = self.get_carrier_status(row, selected_variants, zygosity_filter)
+                status = self.get_carrier_status(
+                    row, selected_variants, zygosity_filter)
                 if status:
                     carriers_status.append({
                         'IID': row['IID'],
@@ -100,6 +104,7 @@ class CarrierDataProcessor:
                     })
 
         return pd.DataFrame(carriers_status) if carriers_status else None
+
 
 def setup_page() -> None:
     """config the page and initialize session state"""
