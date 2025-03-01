@@ -150,8 +150,9 @@ def display_related_samples(pruned_key, pruned2):
 
 def display_carriers(master_key, gp2_data_bucket):
     # load carriers data - subset by samples in master key
+    carriers_path = f'carriers_data/release{st.session_state["release_choice"]}_carriers/release{st.session_state["release_choice"]}_carriers_string.csv'
     carriers_df_in = blob_as_csv(
-        gp2_data_bucket, CarriersConfig.CARRIERS_FILE_PATH, sep=',')
+        gp2_data_bucket, carriers_path, sep=',')
     carriers_df = carriers_df_in.loc[carriers_df_in.IID.isin(master_key.IID)]
     snp_cols = [
         col for col in carriers_df.columns if col not in CarriersConfig.NON_VARIANT_COLUMNS]

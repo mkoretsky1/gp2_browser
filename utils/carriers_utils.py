@@ -1,20 +1,13 @@
 import streamlit as st
 import pandas as pd
 from typing import List, Dict, Optional
-from utils.hold_data import (
-    release_select,
-    config_page
-)
 
 
 class CarriersConfig:
     """config settings for the application."""
-    GP2_DATA_BUCKET_NAME: str = 'gt_app_utils'
-    CARRIERS_FILE_PATH: str = f'carriers_data/release{st.session_state["release_choice"]}_carriers/release{st.session_state["release_choice"]}_carriers_string.csv'
     NON_VARIANT_COLUMNS: List[str] = ['IID', 'ancestry', 'study']
     WILD_TYPE: str = 'WT/WT'
     MISSING_GENOTYPE: str = './.'
-
 
 class GenotypeMatcher:
     """handler for genotype matching and carrier status"""
@@ -104,9 +97,3 @@ class CarrierDataProcessor:
                     })
 
         return pd.DataFrame(carriers_status) if carriers_status else None
-
-
-def setup_page() -> None:
-    """config the page and initialize session state"""
-    config_page('Carriers')
-    release_select()
