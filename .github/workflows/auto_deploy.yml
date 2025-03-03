@@ -1,4 +1,4 @@
-name: Build DockerImage, Push to Artifact Registry and deploy on cloudrun as an api service
+name: Deploy on app engine, split traffic between test and main
 
 on:  
   push:
@@ -34,10 +34,10 @@ jobs:
       if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == false && github.event.pull_request.draft == false }}
       run: |
         gcloud app deploy app.yaml --version test
-        gcloud app services set-traffic $APP_ENGINE_SERVICE --splits main=1 --quiet
+        gcloud app services set-traffic $APP_ENGINE_SERVICE --splits main=1,test=0 --quiet
 
     - name: Deploy main link for a push to main
       if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
       run: |
         gcloud app deploy app.yaml --version main
-        gcloud app services set-traffic $APP_ENGINE_SERVICE --splits main=1 --quiet
+        gcloud app services set-traffic $APP_ENGINE_SERVICE --splits main=1,test=0 --quiet
