@@ -1,4 +1,4 @@
-service: carriers-browser-test
+service: gp2-cohort-browser
 runtime: custom
 env: flex
 resources:
