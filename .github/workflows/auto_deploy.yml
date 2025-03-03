@@ -41,7 +41,6 @@ jobs:
       if: ${{ github.head_ref != 'main' && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
       run: |
         gcloud app deploy app.yaml --version test
-        gcloud app services set-traffic gp2-browser-test --splits test=0
 
     - name: Deploy main link for a push to main
       if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
