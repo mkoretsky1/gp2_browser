@@ -30,16 +30,8 @@ jobs:
     - name: Set up Cloud SDK  # This step sets up the Google Cloud SDK 
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Set up Docker Buildx  # Sets up Docker Buildx (a CLI plugin that extends the docker command with the features provided by Moby BuildKit builder toolkit)
-      uses: docker/setup-buildx-action@v1
-    
-    # - name: Build docker image 
-    #   run: |
-    #     gcloud auth configure-docker us-central1-docker.pkg.dev
-    #     docker build -t us-central1-docker.pkg.dev/$GOOGLE_PROJECT/$APP_ENGINE_SERVICE .
-
     - name: Deploy test link for a push to an open, non-draft PR
-      if: ${{ github.head_ref != 'main' && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
+      if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == false && github.event.pull_request.draft == false }}
       run: |
         gcloud app deploy app.yaml --version test
 
