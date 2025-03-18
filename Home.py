@@ -7,6 +7,8 @@ from utils.config import AppConfig
 config = AppConfig()
 HOME_CONTENT = config.HOME_CONTENT
 
+
+
 def render_home():
     config_page('Home')
     place_logos()
