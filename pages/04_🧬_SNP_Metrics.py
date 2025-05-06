@@ -12,6 +12,7 @@ from utils.config import AppConfig
 
 config = AppConfig()
 
+
 def main():
     config_page("SNP Metrics")
     st.title("GP2 SNP Metrics Browser")
