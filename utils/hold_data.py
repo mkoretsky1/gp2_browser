@@ -27,7 +27,7 @@ def get_gcloud_bucket(bucket_name):
 
 def get_master_key(bucket):
     release_choice = st.session_state["release_choice"]
-    master_key_path = f"release_keys/nba_app_key.csv"
+    master_key_path = f"testing/release{release_choice}/nba_app_key.csv"
     master_key = blob_as_csv(bucket, master_key_path, sep=",")
     latest_rel = max(master_key.release)
     if release_choice == latest_rel:
@@ -97,7 +97,7 @@ def release_callback():
 
 def release_select():
     st.sidebar.markdown("### **Choose a release!**")
-    release_options = [9] # can replace with master key reference
+    release_options = [10] # can replace with master key reference
 
     if "release_choice" not in st.session_state:
         st.session_state["release_choice"] = release_options[0]

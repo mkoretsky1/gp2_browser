@@ -11,7 +11,7 @@ from utils.hold_data import (
 def load_qc_data():
     gp2_data_bucket = get_gcloud_bucket('gt_app_utils')
 
-    qc_metrics_path = f"qc_metrics/release{st.session_state['release_choice']}"
+    qc_metrics_path = f"testing/release{st.session_state['release_choice']}"
     related_df = blob_as_csv(gp2_data_bucket, f'{qc_metrics_path}/related_plot.csv', sep=',')
     funnel_plot =  blob_as_html(gp2_data_bucket, f'{qc_metrics_path}/funnel_plot.html')
     variant_plot =  blob_as_html(gp2_data_bucket, f'{qc_metrics_path}/variant_plot.html')

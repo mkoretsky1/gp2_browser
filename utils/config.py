@@ -22,7 +22,15 @@ class AppConfig(BaseSettings):
         "het": "Heterozygosity Prune",
         "missing_idat": "Missing IDAT File",
         "missing_bed": "Missing BED File",
-        "clinical_inconsistency": "Inconsistency with Clinical Manifests"
+        "clinical_inconsistency": "Inconsistency with Clinical Manifests",
+        "across_study_dup": "Duplication Across Cohorts", 
+        "duplicate_within_cohort": "Duplication Within Cohort",
+        "age": "Age of Onset/Diagnosis Provided for Control",
+        "nba": "Discordance Between NBA and WGS",
+        "cryptic_relatedness": "Cryptic Relatedness Prune",
+        "kinship_failed": "Kinship Calculation Failure",
+        "s1": "Repeated Sample IDs with No Genetic Match",
+        "MZ_twin": "Monozygotic Twins"
     }
 
     ANCESTRY_OPTIONS: List[str] = [
