@@ -10,6 +10,7 @@ from utils.hold_data import (
 
 from utils.ancestry_utils import (
     render_tab_pca,
+    render_pca_select,
     render_tab_admix,
     render_tab_pie,
     render_tab_pred_stats
@@ -38,6 +39,7 @@ def main():
 
     with tab_pca:
         render_tab_pca(plot_folder, gp2_data_bucket)
+        render_pca_select(plot_folder, gp2_data_bucket)
 
     with tab_pred_stats:
         render_tab_pred_stats(plot_folder, gp2_data_bucket)

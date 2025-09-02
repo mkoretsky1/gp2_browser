@@ -107,7 +107,6 @@ def display_pruned_samples(pruned_key, pruned1):
         columns={'prune_reason': 'Pruned Reason', 'count': 'Count'}, inplace=True)
     pruned_steps.set_index('Pruned Reason', inplace=True)
 
-    pruned1.markdown("#####")
     pruned1.markdown("##### Sample-Level Release Prep")
     pruned1.dataframe(pruned_steps, use_container_width=True)
 
@@ -116,12 +115,12 @@ def display_related_samples(pruned_key, pruned2):
     related_samples = pruned_key[pruned_key.related == 1][['label', 'related']]
     related_samples['related_count'] = related_samples.groupby(['label'])[
         'related'].transform('sum')
-
-    duplicated_samples = pruned_key[pruned_key.prune_reason ==
-                                    'Duplicated Prune']
-    duplicated_samples['duplicated'] = 1
+    related_samples.drop_duplicates(inplace = True)
+    
+    duplicated_samples = pruned_key[pruned_key.dup == 1][['label', 'dup']]
     duplicated_samples['duplicated_count'] = duplicated_samples.groupby(['label'])[
-        'duplicated'].transform('sum')
+        'dup'].transform('sum')
+    duplicated_samples.drop_duplicates(inplace = True)
 
     relatedness_df = related_samples[['label', 'related_count']].merge(
         duplicated_samples[['label', 'duplicated_count']], on='label', how='left')
