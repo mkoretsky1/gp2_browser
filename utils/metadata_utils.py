@@ -90,7 +90,7 @@ def display_ancestry(full_cohort):
 
 def ancestry_pca(master_key, plot_title, gp2_data_bucket):
     proj_samples = blob_as_csv(
-        gp2_data_bucket, f"testing/release{st.session_state['release_choice']}/proj_pca_plot.csv", sep=',')
+        gp2_data_bucket, f"cohort_browser/nba/release{st.session_state['release_choice']}/proj_pca_plot.csv", sep=',')
     display_samples = proj_samples[proj_samples.IID.isin(
         master_key.IID)]  # eventually update with new dataframe
     st.session_state[plot_title] = plot_3d(

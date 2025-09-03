@@ -7,7 +7,7 @@ class AppConfig(BaseSettings):
     """
 
     GCP_PROJECT: str = "gp2-release-terra"
-    FRONTEND_BUCKET_NAME: str = "gt_app_utils"
+    FRONTEND_BUCKET_NAME: str = "genotools-server"
 
     SEX_MAP: Dict[int, str] = {
         1: "Male",
@@ -17,20 +17,22 @@ class AppConfig(BaseSettings):
 
     PRUNE_MAP: Dict[str, str] = {
         "callrate": "Callrate Prune",
-        "duplicated": "Duplicated Prune",
         "sex": "Sex Prune",
         "het": "Heterozygosity Prune",
         "missing_idat": "Missing IDAT File",
         "missing_bed": "Missing BED File",
-        "clinical_inconsistency": "Inconsistency with Clinical Manifests",
-        "across_study_dup": "Duplication Across Cohorts", 
-        "duplicate_within_cohort": "Duplication Within Cohort",
-        "age": "Age of Onset/Diagnosis Provided for Control",
-        "nba": "Discordance Between NBA and WGS",
+        "age_of_onset_diagnosis_in_control": "Age of Onset/Diagnosis Provided for Control",
+        "nba_wgs_disconcordant": "Discordance Between NBA and WGS",
         "cryptic_relatedness": "Cryptic Relatedness Prune",
         "kinship_failed": "Kinship Calculation Failure",
-        "s1": "Repeated Sample IDs with No Genetic Match",
-        "MZ_twin": "Monozygotic Twins"
+        "clinical_inconsistency": "Inconsistency with Clinical Manifests",
+        "MZ_twin": "Monozygotic Twins",
+        "s1_s2_not_genetic_duplicates": "Repeated Sample IDs with No Genetic Match",
+        "duplicate_across_study_pick_best_callrate": "Duplication Across Cohorts",
+        "duplicate_across_study_clinical_mismatch": "Duplication Across Cohorts",
+        "duplicate_across_study_pick_nba_match_for_wgs": "Duplication Across Cohorts",
+        "duplicate_within_study_clinical_mismatch": "Duplication Within Cohort",
+        "duplicate_within_study_pick_best_callrate": "Duplication Within Cohort"
     }
 
     ANCESTRY_OPTIONS: List[str] = [

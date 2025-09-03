@@ -26,8 +26,8 @@ def main():
     config_page('Ancestry')
     release_select()
 
-    gp2_data_bucket = get_gcloud_bucket('gt_app_utils') # used to be gp2tier2
-    plot_folder = f"testing/release{st.session_state['release_choice']}"
+    gp2_data_bucket = get_gcloud_bucket('genotools-server') # used to be gp2tier2
+    plot_folder = f"cohort_browser/nba/release{st.session_state['release_choice']}"
 
     tab_pca, tab_pred_stats, tab_pie, tab_admix, tab_methods = st.tabs([
         "Ancestry Prediction",
