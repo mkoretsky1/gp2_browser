@@ -27,7 +27,7 @@ def get_gcloud_bucket(bucket_name):
 
 def get_master_key(bucket):
     release_choice = st.session_state["release_choice"]
-    master_key_path = f"release_keys/nba_app_key.csv"
+    master_key_path = f"cohort_browser/nba/release{release_choice}/nba_app_key.csv"
     master_key = blob_as_csv(bucket, master_key_path, sep=",")
     latest_rel = max(master_key.release)
     if release_choice == latest_rel:
@@ -61,7 +61,7 @@ def config_page(title):
         )
     else:
         frontend_bucket = get_gcloud_bucket(config.FRONTEND_BUCKET_NAME)
-        gp2_bg_blob = frontend_bucket.get_blob("gp2_2.jpg")
+        gp2_bg_blob = frontend_bucket.get_blob("cohort_browser/frontend/gp2_2.jpg")
         gp2_bg = gp2_bg_blob.download_as_bytes()
         st.session_state["gp2_bg"] = gp2_bg
         st.set_page_config(
@@ -78,9 +78,9 @@ def place_logos():
         st.sidebar.image(st.session_state.redlat, use_container_width=True)
     else:
         frontend_bucket = get_gcloud_bucket(config.FRONTEND_BUCKET_NAME)
-        card_removebg_blob = frontend_bucket.get_blob("card-removebg.png")
+        card_removebg_blob = frontend_bucket.get_blob("cohort_browser/frontend/card-removebg.png")
         card_removebg = card_removebg_blob.download_as_bytes()
-        gp2_removebg_blob = frontend_bucket.get_blob("gp2_2-removebg.png")
+        gp2_removebg_blob = frontend_bucket.get_blob("cohort_browser/frontend/gp2_2-removebg.png")
         gp2_removebg = gp2_removebg_blob.download_as_bytes()
         # redlat_blob = frontend_bucket.get_blob("Redlat.png")
         # redlat = redlat_blob.download_as_bytes()
@@ -97,7 +97,7 @@ def release_callback():
 
 def release_select():
     st.sidebar.markdown("### **Choose a release!**")
-    release_options = [9] # can replace with master key reference
+    release_options = [10] # can replace with master key reference
 
     if "release_choice" not in st.session_state:
         st.session_state["release_choice"] = release_options[0]
